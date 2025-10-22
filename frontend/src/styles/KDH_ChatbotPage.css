@@ -1,0 +1,200 @@
+/*
+  전체 배경과 주요 보라색 그라데이션 설정
+*/
+
+.kdh-chatbot-container {
+  display: flex;
+  width: 50vw;
+  height: 100vh;
+  /* 핵심: 전체 배경 보라색 그라데이션 */
+  background: linear-gradient(
+    135deg,
+    #1f0c43 0%, /* 아주 진한 보라색/남색 */
+    #3f1b72 50%, /* 중간 보라색 */
+    #150935 100% /* 진한 보라색 */
+  );
+  color: white; /* 텍스트 색상 */
+  font-family: Arial, sans-serif;
+  overflow: hidden; /* 스크롤 방지 */
+}
+.kdh-main-chat-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 상단 헤더 */
+.kdh-chat-header {
+  display: flex;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: rgba(0, 0, 0, 0.3); /* 살짝 어두운 배경 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.kdh-header-back-icon {
+  color: #a07cd6;
+  margin-right: 15px;
+}
+
+.kdh-chat-title {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-right: 10px;
+  color: #fff;
+}
+
+.kdh-subtitle {
+  font-size: 0.8em;
+  color: #9d9d9d;
+  margin-right: auto; /* 날씨 정보를 오른쪽으로 밀어냄 */
+}
+
+.weather-info {
+  display: flex;
+  align-items: center;
+  font-size: 0.8em;
+  color: #ccc;
+}
+
+.weather-info svg {
+  font-size: 1em;
+  margin-right: 5px;
+}
+
+.temp {
+  font-weight: bold;
+  color: #fff;
+  margin: 0 5px;
+}
+
+.date-range {
+  margin-right: 10px;
+}
+
+.more-weather {
+  color: #a07cd6;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* 메시지 영역 */
+.kdh-message-area {
+  flex-grow: 1;
+  padding: 30px;
+  overflow-y: auto;
+  /* 메인 영역 배경에 보라색 그라데이션 한 번 더 적용 */
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(160, 124, 214, 0.05) 0%, /* 중앙에 약한 보라색 하이라이트 */
+    transparent 70%
+  );
+}
+
+.kdh-chatbot-message {
+  max-width: 60%;
+  padding: 12px 18px;
+  border-radius: 18px 18px 18px 0;
+  background-color: rgba(160, 124, 214, 0.8); /* 연한 보라색 메시지 배경 */
+  color: white;
+  margin-bottom: 20px;
+  line-height: 1.4;
+  position: relative;
+  display: inline-block; /* 내용만큼만 너비 차지 */
+}
+
+.timestamp {
+  display: block;
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 5px;
+  text-align: right;
+}
+
+/* 하단 제안 및 입력 영역 */
+.chat-footer {
+  padding: 20px 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.suggested-routes {
+  margin-bottom: 15px;
+}
+
+.suggest-title {
+  font-size: 0.8em;
+  color: #9d9d9d;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.tags {
+  display: flex;
+  gap: 10px;
+}
+
+.tag {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* 태그별 보라색 계열 스타일 */
+.tag-kpop {
+  background-color: #a07cd6;
+  color: white;
+  border: 1px solid #a07cd6;
+}
+.tag-hotplace {
+  background-color: #6c30a4;
+  color: white;
+  border: 1px solid #6c30a4;
+}
+.tag-activity {
+  background-color: #552780;
+  color: white;
+  border: 1px solid #552780;
+}
+.tag-ocean {
+  background-color: #431f69;
+  color: white;
+  border: 1px solid #431f69;
+}
+
+.tag:hover {
+  opacity: 0.8;
+}
+
+.input-bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.input-bar input {
+  flex-grow: 1;
+  padding: 12px 50px 12px 20px; /* 오른쪽 아이콘 공간 확보 */
+  border-radius: 30px;
+  border: none;
+  background-color: #431f69; /* 진한 보라색/남색 입력창 배경 */
+  color: white;
+  font-size: 1em;
+  outline: none;
+}
+
+.input-bar input::placeholder {
+  color: #9d9d9d;
+}
+
+.search-icon {
+  position: absolute;
+  right: 15px;
+  color: #a07cd6; /* 연한 보라색 아이콘 */
+  font-size: 1.5em;
+  cursor: pointer;
+}

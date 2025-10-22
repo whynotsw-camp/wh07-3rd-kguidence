@@ -1,0 +1,34 @@
+# FastAPI 및 서버
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# 데이터베이스 (Raw SQL)
+pymysql==1.1.0
+cryptography==41.0.7
+
+# 세션 관리 (Redis)
+redis==5.0.1
+
+# 비밀번호 해싱
+passlib[bcrypt]==1.7.4
+bcrypt==4.1.1
+
+# OpenAI
+openai==1.3.7
+
+# 유틸리티
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# HTTP 클라이언트 (카카오 API 호출용)
+httpx==0.25.2
+
+# Phase 3: ChromaDB (추천 시스템)
+chromadb==0.4.18
+
+# 개발 도구
+pytest==7.4.3
+pytest-asyncio==0.21.1
