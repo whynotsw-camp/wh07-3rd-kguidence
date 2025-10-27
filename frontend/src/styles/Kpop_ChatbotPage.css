@@ -1,0 +1,194 @@
+/* Kpop_ChatbotPage.css */
+
+/* 전체 메인 채팅 영역 */
+.kpop-main-chat-area {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(
+    135deg,
+    #d9b3ff 0%,   /* 연보라 */
+    #ffb3d9 50%,  /* 분홍 */
+    #b366ff 100%  /* 진보라 */
+  );
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* 상단 헤더 */
+.kpop-chat-header {
+  display: flex;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: rgba(128, 0, 128, 0.45); /* 보라 투명 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+}
+
+.kpop-header-back-icon {
+  color: #ff99cc; /* 밝은 분홍 */
+  margin-right: 15px;
+}
+
+.kpop-chat-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-right: 10px;
+  color: #fff;
+}
+
+.kpop-subtitle {
+  font-size: 0.85em;
+  color: #ffe6f0;
+  margin-right: auto;
+}
+
+.kpop-weather-info {
+  display: flex;
+  align-items: center;
+  font-size: 0.8em;
+  color: #ffe6f0;
+}
+
+.kpop-weather-info svg {
+  font-size: 1em;
+  margin-right: 5px;
+}
+
+.kpop-temp {
+  font-weight: bold;
+  margin: 0 5px;
+}
+
+.kpop-date-range {
+  margin-right: 10px;
+}
+
+.kpop-more-weather {
+  color: #ff99cc;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* 메시지 영역 */
+.kpop-message-area {
+  flex-grow: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 153, 204, 0.05) 0%,  /* 연분홍 반투명 */
+    transparent 70%
+  );
+}
+
+.kpop-chatbot-message {
+  max-width: 60%;
+  padding: 12px 18px;
+  border-radius: 18px 18px 18px 0;
+  background-color: rgba(204, 102, 255, 0.6); /* 보라 반투명 */
+  color: white;
+  margin-bottom: 20px;
+  line-height: 1.4;
+  display: inline-block;
+}
+
+.kpop-timestamp {
+  display: block;
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 5px;
+  text-align: right;
+}
+
+/* 하단 입력 영역 */
+.kpop-chat-footer {
+  padding: 20px 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  background-color: rgba(128, 0, 128, 0.45); /* 보라 투명 */
+}
+
+.kpop-suggested-routes {
+  margin-bottom: 15px;
+}
+
+.kpop-suggest-title {
+  font-size: 0.8em;
+  color: #ffe6f0;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.kpop-tags {
+  display: flex;
+  gap: 10px;
+}
+
+.kpop-tag {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* 태그별 색상 - 분홍 + 보라 컨셉 */
+.kpop-tag-kpop {
+  background-color: #ff99cc; /* 분홍 */
+  color: white;
+  border: 1px solid #ff99cc;
+}
+
+.kpop-tag-hotplace {
+  background-color: #cc66ff; /* 보라 */
+  color: white;
+  border: 1px solid #cc66ff;
+}
+
+.kpop-tag-activity {
+  background-color: #ff66b3; /* 진분홍 */
+  color: white;
+  border: 1px solid #ff66b3;
+}
+
+.kpop-tag-ocean {
+  background-color: #9933ff; /* 진보라 */
+  color: white;
+  border: 1px solid #9933ff;
+}
+
+.kpop-tag:hover {
+  opacity: 0.85;
+}
+
+/* 입력 바 */
+.kpop-input-bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.kpop-input-bar input {
+  flex-grow: 1;
+  padding: 12px 50px 12px 20px;
+  border-radius: 30px;
+  border: none;
+  background-color: rgba(255, 153, 204, 0.3); /* 연분홍 투명 */
+  color: white;
+  font-size: 1em;
+  outline: none;
+}
+
+.kpop-input-bar input::placeholder {
+  color: #ffe6f0;
+}
+
+.kpop-search-icon {
+  position: absolute;
+  right: 15px;
+  color: #ff99cc;
+  font-size: 1.5em;
+  cursor: pointer;
+}

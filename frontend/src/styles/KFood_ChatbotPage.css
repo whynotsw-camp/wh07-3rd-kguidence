@@ -1,0 +1,200 @@
+/* KFood_ChatbotPage.css */
+
+/* 전체 배경과 주요 색상: 차분한 갈색/남색 톤 */
+.kfood-chatbot-container {
+  display: flex;
+  width: 50vw;
+  height: 100vh;
+  background: linear-gradient(
+    135deg,
+    #2b2b2f 0%,    /* 어두운 남색/회색 */
+    #4b3f36 50%,   /* 중간 브라운 계열 */
+    #1f1d22 100%   /* 진한 남색/검정색 느낌 */
+  );
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* 오른쪽 메인 채팅 영역 */
+.kfood-main-chat-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.kfood-chat-header {
+  display: flex;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: rgba(0, 0, 0, 0.45);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.kfood-header-back-icon {
+  color: #d6b27c;
+  margin-right: 15px;
+}
+
+.kfood-chat-title {
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-right: 10px;
+  color: #fff;
+}
+
+.kfood-subtitle {
+  font-size: 0.8em;
+  color: #b0a090;
+  margin-right: auto;
+}
+
+.kfood-weather-info {
+  display: flex;
+  align-items: center;
+  font-size: 0.8em;
+  color: #ccc;
+}
+
+.kfood-weather-info svg {
+  font-size: 1em;
+  margin-right: 5px;
+}
+
+.kfood-temp {
+  font-weight: bold;
+  color: #fff;
+  margin: 0 5px;
+}
+
+.kfood-date-range {
+  margin-right: 10px;
+}
+
+.kfood-more-weather {
+  color: #d6b27c;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+/* 메시지 영역 */
+.kfood-message-area {
+  flex-grow: 1;
+  padding: 30px;
+  overflow-y: auto;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(214, 178, 124, 0.05) 0%,
+    transparent 70%
+  );
+}
+
+.kfood-chatbot-message {
+  max-width: 60%;
+  padding: 12px 18px;
+  border-radius: 18px 18px 18px 0;
+  background-color: rgba(214, 178, 124, 0.6);
+  color: white;
+  margin-bottom: 20px;
+  line-height: 1.4;
+  display: inline-block;
+}
+
+.kfood-timestamp {
+  display: block;
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 5px;
+  text-align: right;
+}
+
+/* 하단 입력 영역 */
+.kfood-chat-footer {
+  padding: 20px 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(0, 0, 0, 0.45);
+}
+
+.kfood-suggested-routes {
+  margin-bottom: 15px;
+}
+
+.kfood-suggest-title {
+  font-size: 0.8em;
+  color: #b0a090;
+  font-weight: bold;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.kfood-tags {
+  display: flex;
+  gap: 10px;
+}
+
+.kfood-tag {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* 태그별 색상 - KFood 컨셉 */
+.kfood-tag-kpop {
+  background-color: #d6b27c;
+  color: white;
+  border: 1px solid #d6b27c;
+}
+
+.kfood-tag-hotplace {
+  background-color: #c79f7f;
+  color: white;
+  border: 1px solid #c79f7f;
+}
+
+.kfood-tag-activity {
+  background-color: #a87e5b;
+  color: white;
+  border: 1px solid #a87e5b;
+}
+
+.kfood-tag-ocean {
+  background-color: #8c6a4d;
+  color: white;
+  border: 1px solid #8c6a4d;
+}
+
+.kfood-tag:hover {
+  opacity: 0.8;
+}
+
+.kfood-input-bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.kfood-input-bar input {
+  flex-grow: 1;
+  padding: 12px 50px 12px 20px;
+  border-radius: 30px;
+  border: none;
+  background-color: #4b3f36;
+  color: white;
+  font-size: 1em;
+  outline: none;
+}
+
+.kfood-input-bar input::placeholder {
+  color: #b0a090;
+}
+
+.kfood-search-icon {
+  position: absolute;
+  right: 15px;
+  color: #d6b27c;
+  font-size: 1.5em;
+  cursor: pointer;
+}

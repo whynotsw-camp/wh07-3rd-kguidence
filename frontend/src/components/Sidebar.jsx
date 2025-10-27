@@ -36,7 +36,7 @@ const Sidebar = () => {
                             <FaStar />
                             <span>K-Spotlight</span>
                         </Link>
-                    </li>
+                    </li>``
                     <li>
                         <Link to="/festivals">
                             <FaMusic />

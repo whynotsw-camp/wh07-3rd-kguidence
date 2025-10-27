@@ -6,6 +6,8 @@ import DashboardPage from './pages/DashboardPage.js';
 import Concept_MainPage from './pages/Concept_MainPage.jsx';
 import KpopFestival_MapLayout from './pages/KpopFestival_MapLayout.jsx';
 import KDH_ChatbotMapLayout from './pages/KDH_ChatbotMapLayout.jsx';
+import Kpop_ChatbotMapLayout from './pages/Kpop_ChatbotMapLayout.jsx';
+import KFood_ChatbotMapLayout from './pages/KFood_ChatbotMapLayout.jsx';
 import FestivalPage from './pages/FestivalPage.jsx';
 import Sidebar from './components/Sidebar.jsx';
 console.log('CLIENT_ID:', process.env.REACT_APP_NAVER_MAPS_CLIENT_ID);
@@ -42,7 +44,8 @@ function App() {
                         <Route path="/login" element={<LoginPage />} />
                         <Route path="/signup" element={<SignupPage />} />
                         <Route path="/dashboard" element={<DashboardPage />} />
-                        
+                        <Route path="/chatbot/kpop-star" element={<Kpop_ChatbotMapLayout />} />
+                        <Route path="/chatbot/k-food" element={<KFood_ChatbotMapLayout />} />
                         <Route path="/" element={<Concept_MainPage />} />
                         <Route path="/festival" element={<KpopFestival_MapLayout />} />
                         <Route path="/chatbot/demon-hunters" element={<KDH_ChatbotMapLayout />} />
