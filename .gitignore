@@ -22,3 +22,26 @@ Thumbs.db
 *.log
 npm-debug.log*
 EOF
+
+# __pycache__
+backend/app/__pycache__/main.cpython-311.pyc
+backend/app/api/endpoints/__pycache__/auth.cpython-311.pyc
+backend/app/api/endpoints/__pycache__/chat.cpython-311.pyc
+backend/app/api/endpoints/__pycache__/destinations.cpython-311.pyc
+backend/app/api/endpoints/__pycache__/festival.cpython-311.pyc
+backend/app/core/__pycache__/config.cpython-311.pyc
+backend/app/core/__pycache__/deps.cpython-311.pyc
+backend/app/core/__pycache__/security.cpython-311.pyc
+backend/app/core/__pycache__/session.cpython-311.pyc
+backend/app/database/queries/__pycache__/conversation_queries.cpython-311.pyc
+backend/app/database/queries/__pycache__/destination_queries.cpython-311.pyc
+backend/app/services/__pycache__/auth_service.cpython-311.pyc
+backend/app/services/__pycache__/chat_service.cpython-311.pyc
+backend/app/utils/__pycache__/openai_client.cpython-311.pyc
+backend/app/database/queries/__pycache__/user_queries.cpython-311.pyc
+backend/app/database/queries/__pycache__/festival_queries.cpython-311.pyc
+backend/app/utils/__pycache__/prompts.cpython-311.pyc
+backend/app/database/__pycache__/connection.cpython-311.pyc
+
+get-docker.sh
+test/

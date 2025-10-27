@@ -1,293 +1,468 @@
-.main-container {
+/* =============================
+    Concept_MainPage.css (모든 스타일 통합)
+============================= */
+
+/* =============================
+    기본 설정
+============================= */
+html, body {
+    width: 100%;
+    overflow-x: hidden;
+    font-family: Arial, sans-serif;
+    background-color: #1a1a2e;
+    color: #f0f0f0;
+}
+
+/* =============================
+    전체 컨테이너
+============================= */
+.login-page-container {
+    display: flex;
+    width: 100%;
     min-height: 100vh;
+    overflow-x: hidden;
+    /* JSX에서 제거된 인라인 스타일 */
+    margin-left: 0;
+    transition: margin-left 0.3s ease;
+}
+
+/* =============================
+    왼쪽 메인 콘텐츠
+============================= */
+.main-content-area {
+    flex: 7;
+    padding: 60px 100px;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px;
-}
-
-/* 헤더 */
-.main-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 40px;
-    margin-bottom: 40px;
-}
-
-.logo-area {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.logo-img {
-    height: 50px;
-    width: auto;
-}
-
-.logo-text {
-    font-size: 32px;
-    font-weight: bold;
-    color: white;
-}
-
-.icon-area {
-    display: flex;
     gap: 20px;
+    min-width: 0;
+}
+.main-content-area .page-header { 
+    /* 이 부분을 추가하거나 수정하여 배경색을 제거 */
+    background: transparent;
 }
 
-.icon {
-    font-size: 28px;
-    cursor: pointer;
-    transition: transform 0.3s;
+/* K-Guidance 제목 스타일 */
+.page-header .header-title {
+    font-size: 50px;
+    font-weight: bold;
+    color: #f5f2f2; /* 이제 이 색상이 강력하게 적용될 것입니다. */
 }
 
-.icon:hover {
-    transform: scale(1.1);
-}
-
-/* Welcome 섹션 */
-.welcome-section {
-    text-align: center;
-    padding: 30px 20px;
-    margin-bottom: 50px;
+.welcome-title {
+    font-size: 40px;
+    font-weight: bold;
 }
 
 .welcome-text {
-    font-size: 18px;
-    line-height: 1.6;
-    max-width: 800px;
-    margin: 0 auto;
-    background: rgba(255,255,255,0.1);
-    padding: 20px 30px;
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
+    font-size: 30px;
+    color: #b0b0c0;
+    line-height: 1.5;
 }
 
-/* 컨텐츠 선택 영역 */
-.content-selection {
-    display: flex;
-    gap: 40px;
-    padding: 40px;
-    flex: 1;
-    max-width: 2800px;
-    margin: 0 auto;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-}
-
-/* 큰 블록 - 높이 20% 감소 (1000px → 800px) */
-.large-block {
-    position: relative;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    cursor: pointer;
-    transition: transform 0.3s;
-    width: 1000px;
-    height: 800px;
-    flex-shrink: 0;
-}
-
-.large-block:hover {
-    transform: translateY(-5px);
-}
-
-/* 작은 블록들 */
-.side-blocks {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    height: 800px;
-}
-
-.small-block {
-    position: relative;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    cursor: pointer;
-    transition: transform 0.3s;
-    width: 480px;
-    height: 380px;
-    flex-shrink: 0;
-}
-
-.small-block:hover {
-    transform: translateY(-5px);
-}
-
-/* 플레이스홀더 이미지 */
-.placeholder-image {
-    width: 100%;
-    height: 100%;
+/* =============================
+    로그인 후 사용자 정보 (인라인 스타일에서 클래스로 분리)
+============================= */
+.user-info-display {
+    position: absolute;
+    top: 20px;
+    right: 20px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #434343 0%, #000000 100%);
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.user-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.logout-button {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+    background: #ff3838;
+}
+
+/* =============================
+    컨셉 선택
+============================= */
+.concept-selection {
+    margin-top: 0px;
+}
+
+.concept-prompt {
     font-size: 24px;
     font-weight: bold;
-    color: white;
-    text-align: center;
-    position: relative;
+    color: #f0f0f0;
+    margin-bottom: 20px;
+    border-left: 4px solid #8e44ad;
+    padding-left: 12px;
+}
+
+.concept-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 2fr);
+    gap: 20px;
+}
+
+/* =============================
+    컨셉 카드 (ConceptCard Link)
+============================= */
+.concept-card-link {
+    /* Link 태그가 div의 역할을 하도록 display 속성을 설정 */
+    display: block; 
+    text-decoration: none; 
+    color: inherit; 
+    position: relative; 
     overflow: hidden;
+    border-radius: 12px;
+    height: 300px; /* 카드의 높이 */
+    transition: transform 0.2s, box-shadow 0.2s; 
 }
 
-.placeholder-image.large {
-    font-size: 32px;
+/* hover 효과를 Link 전체에 적용 */
+.concept-card-link:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
-.placeholder-image.small {
+.concept-card-content {
+    padding: 25px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    transition: transform 0.2s, box-shadow 0.2s; /* 애니메이션 유지 */
+    position: relative;
+    z-index: 10;
+}
+
+.card-title {
+    font-size: 28px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 3;
+}
+
+.card-subtitle {
     font-size: 18px;
+    color: rgba(255, 255, 255, 0.85);
+    position: relative;
+    bottom: 15px;
+    z-index: 3;
 }
 
-/* placeholder 안의 이미지 기본 스타일 */
-.placeholder-image img {
+.card-icon-wrapper {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    top: 0;
-    left: 0;
-}
-
-/* 작은 블록의 이미지 스타일 */
-.small-block .placeholder-image img {
-    width: 100%;   /* 가로 1/2 */
-    height: 100%;  /* 세로 1/2 */
-    object-fit: contain;  /* 이미지 비율 유지 */
-}
-
-/* 첫 번째 작은 블록 (K-POP Group)만 축소 */
-.small-block:first-child .placeholder-image img {
-    width: 120%;
-    height: 100%;
-    object-fit: contain;
-}
-
-/* 두 번째 작은 블록 (SQUID GAME)은 확대 유지 */
-.small-block:last-child .placeholder-image img {
-    transform: scale(1.5);
-}
-
-.block-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* 오버레이 텍스트 */
-.concept-overlay {
-    position: absolute;
-    top: 40px;
-    left: 40px;
-    background: rgba(0,0,0,0.7);
-    padding: 20px 40px;
-    border-radius: 16px;
-    font-size: 32px;
-    font-weight: 500;
-}
-
-/* 화살표 오버레이 - 크기 반으로 줄임 */
-.arrow-overlay {
-    position: absolute;
-    bottom: 40px;
-    right: 40px;
-    background: rgba(255,255,255,0.9);
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
+    bottom: 20px;
     display: flex;
     align-items: center;
+    gap: 10px;
+    z-index: 3;
+}
+
+.card-icon {
+    font-size: 20px;
+    color: #fff;
+}
+
+.arrow {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* 카드 배경 및 오버레이 */
+.card-kpop-demon {
+    background: url('../assets/kpop_demon_hunters.jpg') center/cover no-repeat;
+}
+.card-kpop-demon::after {
+    content: "";
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(75, 0, 130, 0.5);
+    border-radius: 12px;
+    z-index: 2;
+}
+
+.card-kpop-star {
+    background: url('../assets/kpop_group.png') center/cover no-repeat;
+}
+.card-kpop-star::after {
+    content: "";
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255, 69, 0, 0.3);
+    border-radius: 12px;
+    z-index: 2;
+}
+
+.card-kfood {
+    background: url('../assets/k_food_cover.jpg') center/cover no-repeat;
+}
+.card-kfood::after {
+    content: "";
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(80, 50, 20, 0.5);
+    border-radius: 12px;
+    z-index: 2;
+}
+
+/* =============================
+    오른쪽 로그인 영역
+============================= */
+.login-form-sidebar {
+    flex: 3;
+    min-width: 400px;
+    background-color: #2a2a44;
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
     justify-content: center;
-    transition: all 0.3s;
+    align-items: center;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.login-box {
+    width: 100%;
+    max-width: 420px;
+}
+
+.login-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.login-subtitle {
+    font-size: 15px;
+    color: #b0b0c0;
+    margin-bottom: 30px;
+}
+
+/* =============================
+    폼 요소
+============================= */
+.login-form label {
+    display: block;
+    font-size: 14px;
+    color: #b0b0c0;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.text-input {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid #444466;
+    background-color: #1a1a2e;
+    color: #f0f0f0;
+    font-size: 16px;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #b0b0c0;
+}
+
+.remember-forgot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0 30px;
+    font-size: 14px;
+}
+
+.forgot-password {
+    color: #8e44ad;
     text-decoration: none;
 }
 
-.arrow-overlay.small-arrow {
-    width: 50px;
-    height: 50px;
-}
-
-.arrow-overlay:hover {
-    background: white;
-    transform: scale(1.1);
-}
-
-.arrow-icon {
-    font-size: 28px;
-    color: #1976d2;
-}
-
-/* 푸터 */
-.main-footer {
-    text-align: center;
-    padding: 30px 20px;
-    margin-top: 40px;
-}
-
-.footer-text {
+/* 체크박스 */
+.checkbox-container {
+    position: relative;
+    padding-left: 25px;
+    cursor: pointer;
     font-size: 14px;
-    opacity: 0.8;
+    color: #b0b0c0;
+}
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+.checkmark {
+    position: absolute;
+    top: 0; left: 0;
+    width: 16px; height: 16px;
+    background-color: #1a1a2e;
+    border: 1px solid #444466;
+    border-radius: 4px;
+}
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #8e44ad;
+    border-color: #8e44ad;
+}
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+.checkbox-container .checkmark:after {
+    left: 5px; top: 1px;
+    width: 5px; height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
 }
 
-/* 반응형 */
-@media (max-width: 968px) {
-    .content-selection {
-        flex-direction: column;
-        align-items: center;
+/* =============================
+    버튼 & 에러 메시지
+============================= */
+/* 에러 메시지 박스 (인라인 스타일에서 클래스로 분리) */
+.error-message-box {
+    background-color: #fee2e2;
+    color: #991b1b;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid #fecaca;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.error-close-button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #991b1b;
+    padding: 0 4px;
+}
+
+.sign-in-button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(90deg,#9933cc,#ff66b2);
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    transition: opacity 0.2s; /* 호버 효과를 위한 트랜지션 추가 */
+}
+
+.sign-in-button:hover { 
+    opacity: 0.9; 
+}
+
+/* 로딩 중 및 비활성화 상태 (disabled 속성으로 처리) */
+.sign-in-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.social-login-divider {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 14px;
+    color: #b0b0c0;
+    position: relative;
+}
+.social-login-divider span {
+    background-color: #2a2a44;
+    padding: 0 10px;
+    position: relative;
+    z-index: 2;
+}
+.social-login-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 0; right: 0;
+    height: 1px;
+    background-color: #444466;
+    z-index: 1;
+}
+
+.sign-up-prompt {
+    text-align: center;
+    font-size: 14px;
+    margin-top: 40px;
+    color: #b0b0c0;
+}
+.sign-up-link {
+    color: #8e44ad;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+/* =============================
+    반응형
+============================= */
+@media (max-width: 1024px) {
+    .login-page-container {
+        /* 세로로 쌓이도록 변경 */
+        flex-direction: column; 
+        /* 컨텐츠 길이에 맞게 높이 조정 */
+        min-height: auto; 
     }
     
-    .large-block {
-        width: 400px;
-        height: 400px;
-    }
-    
-    .side-blocks {
-        flex-direction: row;
+    .main-content-area, .login-form-sidebar {
         width: 100%;
-        height: auto;
-        justify-content: center;
+        /* 7:3 비율 해제 */
+        flex: none; 
+        
+        margin: 0 !important; 
+        max-width: none !important;
+        
+        min-width: 0;
+        padding: 30px;
     }
     
-    .small-block {
-        width: 190px;
-        height: 190px;
+    .concept-cards-grid {
+        /* 모바일/태블릿에서는 한 줄에 하나의 카드만 표시 */
+        grid-template-columns: 1fr; 
+    }
+    
+    .card-kfood {
+        grid-column: span 1; 
     }
 }
 
-@media (max-width: 768px) {
-    .main-header {
-        padding: 10px 20px;
-    }
-    
-    .logo-text {
-        font-size: 24px;
-    }
-    
-    .welcome-text {
-        font-size: 16px;
-    }
-    
-    .content-selection {
-        padding: 10px;
-    }
-    
-    .large-block {
-        width: 300px;
-        height: 300px;
-    }
-    
-    .side-blocks {
-        flex-direction: column;
-        gap: 15px;
-    }
-    
-    .small-block {
-        width: 150px;
-        height: 150px;
-    }
+@media (max-width: 480px) {
+    .welcome-title { font-size: 36px; }
+    .welcome-text { font-size: 16px; }
+    .concept-prompt { font-size: 20px; }
+    /* 모바일에서 카드 높이 조정 */
+    .concept-card-link { height: 300px; } 
 }

@@ -38,43 +38,43 @@ function LoginForm() {
   return (
     <div className="auth-container">
       <div className="auth-box">
-        <h1 className="auth-title">🌍 Travel Planner</h1>
-        <h2 className="auth-subtitle">로그인</h2>
+        <h1 className="auth-title">✈ K-Guidance</h1>
+        <h2 className="auth-subtitle">Login</h2>
 
         <ErrorMessage message={error} onClose={() => setError('')} />
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label>아이디</label>
+            <label>User ID</label>
             <input
               type="text"
               name="username"
               value={formData.username}
               onChange={handleChange}
-              placeholder="아이디를 입력하세요"
+              placeholder="Please enter your ID"
               required
             />
           </div>
 
           <div className="form-group">
-            <label>비밀번호</label>
+            <label>Passward</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="비밀번호"
+              placeholder="Passward"
               required
             />
           </div>
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? '로그인 중...' : '로그인'}
+            {loading ? 'Signing up...' : 'Done signing up!'}
           </button>
         </form>
 
         <p className="auth-footer">
-          계정이 없으신가요? <Link to="/signup">회원가입</Link>
+          Do you already have an account? <Link to="/signup">Sign Up</Link>
         </p>
       </div>
     </div>

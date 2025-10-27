@@ -16,14 +16,16 @@ const Sidebar = () => {
                     <span className="hamburger-line"></span>
                 </div>
                 {/* 제목 */}
-                <h1>K-Guidance</h1>
+                <h1>K-Guidance Menu</h1>
             </div>
 
             {/* 새 채팅 버튼 */}
-            <button className="new-chat-btn">
-                <span className="chat-icon">💬</span>
-                New Chat
-            </button>
+            <Link to="/" className="new-chat-btn-link">
+                <button className="new-chat-btn">
+                    <span className="chat-icon">💬</span>
+                    New Chat
+                </button>
+            </Link>
 
             {/* SERVICES 섹션 */}
             <div className="sidebar-section">
@@ -36,7 +38,7 @@ const Sidebar = () => {
                         </Link>
                     </li>
                     <li>
-                        <Link to="/k-concert">
+                        <Link to="/festivals">
                             <FaMusic />
                             <span>K-Concert</span>
                         </Link>
@@ -51,13 +53,6 @@ const Sidebar = () => {
                         <Link to="/k-pathidea">
                             <FaCompass />
                             <span>K-PathIdea</span>
-                        </Link>
-                    </li>
-                    
-                    <li>
-                        <Link to="/festivals">
-                            <FaCalendar />  {/* FaCalendar 사용 */}
-                            <span>Festivals</span>
                         </Link>
                     </li>
 

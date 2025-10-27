@@ -3,11 +3,13 @@
 .sidebar {
     position: fixed;
     top: 0;
-    left: -220px;  /* 숨김 상태 */
+    left: -220px;
     width: 250px;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.95);
-    color: #fff;
+    /* --- 이 값을 원하는 반투명도로 변경하세요 --- */
+    background-color: rgba(0, 0, 0, 0.9) !important; /* 검은색에 20% 불투명도 적용 */
+    /* ------------------------------------- */
+    color: #fff; /* 배경색이 어두워지므로 텍스트 색상은 흰색(또는 밝은색)으로 유지 */
     padding: 20px;
     overflow-y: auto;
     transition: left 0.3s ease;
@@ -111,7 +113,7 @@
 .section-title {
     font-size: 0.8em;
     font-weight: bold;
-    color: #681313;
+    color: #f3f1f1;
     margin-bottom: 10px;
     padding: 0;
     text-transform: uppercase;
@@ -136,7 +138,7 @@
     cursor: pointer;
     transition: background-color 0.2s;
     font-size: 1em;
-    color: #532020;
+    color: #e2dede;
     text-decoration: none;
     border-radius: 4px;
 }
@@ -147,19 +149,19 @@
 
 .menu-list li a svg {
     font-size: 1.1em;
-    color: #050505;
+    color: #f7f2f2;
 }
 
 .recent-chats-list li {
     padding: 8px 10px;
     cursor: pointer;
     font-size: 0.9em;
-    color: #080808;
+    color: #ebe5e5;
     transition: color 0.2s;
     border-radius: 4px;
 }
 
 .recent-chats-list li:hover {
-    color: #0c0c0c;
+    color: #efe3e3;
     background-color: rgba(255, 255, 255, 0.05);
 }

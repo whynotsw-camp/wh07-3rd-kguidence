@@ -1,15 +1,19 @@
+// ConceptMainPage.jsx (로직과 구조 전용)
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import '../styles/Concept_LoginPage.css';
+import '../styles/Concept_MainPage.css'; // 외부 CSS 파일만 import
 import { FaMicrophone, FaStar, FaHamburger } from 'react-icons/fa';
 import Sidebar from '../components/Sidebar';
+
 
 const ConceptCard = ({ title, subTitle, icon: Icon, colorClass, destination }) => (
     <Link 
         to={destination}
-        className={`concept-card-link ${colorClass}`}
+        // 배경, hover 효과를 담당하는 클래스를 Link에 적용
+        className={`concept-card-link ${colorClass}`} 
     >
-        <div className={`concept-card-content`}> 
+        <div className="concept-card-content"> 
             <h3 className="card-title">{title}</h3>
             <p className="card-subtitle">{subTitle}</p>
             <div className="card-icon-wrapper">
@@ -20,7 +24,7 @@ const ConceptCard = ({ title, subTitle, icon: Icon, colorClass, destination }) =
     </Link>
 );
 
-const ConceptLoginPage = () => {
+const ConceptMainPage = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         username: '',
@@ -33,6 +37,9 @@ const ConceptLoginPage = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
 
+    // ************************
+    // 로그인/상태 관리 로직
+    // ************************
     useEffect(() => {
         checkLoginStatus();
     }, []);
@@ -113,58 +120,29 @@ const ConceptLoginPage = () => {
             console.error('Logout error:', err);
         }
     };
-
+    // ************************
+    
     return (
         <>
-            {/* Sidebar를 페이지 밖으로 */}
+            {/* Sidebar는 컴포넌트 내부에서 위치를 잡습니다. */}
             {isLoggedIn && <Sidebar />}
             
-            <div className="login-page-container" style={{
-                marginLeft: '0',  // 로그인 시 Sidebar 공간 확보
-                transition: 'margin-left 0.3s ease'
-            }}>
-                {/* Header/Sidebar (왼쪽 영역) */}
+            {/* 인라인 스타일 제거: .login-page-container 클래스에 transition 및 margin-left 속성 적용 */}
+            <div className="login-page-container">
+                
                 <div className="main-content-area">
                     <header className="page-header">
                         <h1 className="header-title">K-Guidance</h1>
                         
-                        {/* 로그인 후 사용자 정보 */}
+                        {/* 로그인 후 사용자 정보: 인라인 스타일 제거, 클래스 적용 */}
                         {isLoggedIn && currentUser && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '20px',
-                                right: '20px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                background: 'rgba(255, 255, 255, 0.9)',
-                                padding: '10px 20px',
-                                borderRadius: '25px',
-                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                                zIndex: 100
-                            }}>
-                                <span style={{
-                                    fontSize: '14px',
-                                    fontWeight: '600',
-                                    color: '#333'
-                                }}>
+                            <div className="user-info-display">
+                                <span className="user-text">
                                     👤 {currentUser.username || currentUser.name}
                                 </span>
                                 <button
                                     onClick={handleLogout}
-                                    style={{
-                                        background: '#ff4757',
-                                        color: 'white',
-                                        border: 'none',
-                                        padding: '6px 16px',
-                                        borderRadius: '20px',
-                                        fontSize: '13px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease'
-                                    }}
-                                    onMouseEnter={(e) => e.target.style.background = '#ff3838'}
-                                    onMouseLeave={(e) => e.target.style.background = '#ff4757'}
+                                    className="logout-button"
                                 >
                                     Logout
                                 </button>
@@ -173,8 +151,8 @@ const ConceptLoginPage = () => {
                     </header>
 
                     <section className="welcome-section">
-                        <h2 className="welcome-title">Welcome! We are K-Guidance,</h2>
-        
+                        <h2 className="welcome-title">We are K-Guidance,</h2>
+                        
                         <p className="welcome-text">
                             We serve as your personalized travel planner for foreign visitors, ensuring you never lose your way amidst Korea's diverse charms.
                             Don't get lost in a sea of complex information.
@@ -228,31 +206,15 @@ const ConceptLoginPage = () => {
                             <h2 className="login-title">✈ Sign In</h2>
                             <p className="login-subtitle">Join your K-Experience journey</p>
                             
+                            {/* 에러 메시지: 인라인 스타일 제거, 클래스 적용 */}
                             {error && (
-                                <div style={{
-                                    backgroundColor: '#fee2e2',
-                                    color: '#991b1b',
-                                    padding: '12px',
-                                    borderRadius: '8px',
-                                    marginBottom: '16px',
-                                    border: '1px solid #fecaca',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}>
+                                <div className="error-message-box">
                                     <span>{error}</span>
                                     <button 
                                         onClick={() => setError('')}
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            fontSize: '20px',
-                                            cursor: 'pointer',
-                                            color: '#991b1b',
-                                            padding: '0 4px'
-                                        }}
+                                        className="error-close-button"
                                     >
-                                        ×
+                                        &times;
                                     </button>
                                 </div>
                             )}
@@ -287,7 +249,6 @@ const ConceptLoginPage = () => {
                                     <span 
                                         className="password-toggle"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        style={{ cursor: 'pointer' }}
                                     >
                                         {showPassword ? '🙈' : '👁️'}
                                     </span>
@@ -310,10 +271,7 @@ const ConceptLoginPage = () => {
                                     type="submit" 
                                     className="sign-in-button"
                                     disabled={loading}
-                                    style={{
-                                        opacity: loading ? 0.7 : 1,
-                                        cursor: loading ? 'not-allowed' : 'pointer'
-                                    }}
+                                    // 로딩 중 스타일은 CSS 파일의 .sign-in-button:disabled에서 처리
                                 >
                                     {loading ? 'Signing In...' : 'Sign In'}
                                 </button>
@@ -332,4 +290,4 @@ const ConceptLoginPage = () => {
     );
 };
 
-export default ConceptLoginPage;
+export default ConceptMainPage;
