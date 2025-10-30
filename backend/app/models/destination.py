@@ -64,55 +64,59 @@ class Destination(Base):
             db.rollback()
             raise Exception(f"목적지 추가 실패: {str(e)}")
     
-    @classmethod
-    def check_duplicate(
-        cls,
-        db: Session,
-        user_id: int,
-        reference_id: int,
-        place_type: int
-    ) -> bool:
-        """중복 목적지 체크"""
-        try:
-            existing = db.query(cls).filter(
-                cls.user_id == user_id,
-                cls.reference_id == reference_id,
-                cls.place_type == place_type
-            ).first()
-            
-            return existing is not None
-            
-        except SQLAlchemyError as e:
-            raise Exception(f"중복 체크 실패: {str(e)}")
+    ###########################
+    # 당장 안 쓰는 기능들 - 필요할 때 활성화
+    ###########################
     
-    @classmethod
-    def get_by_id(cls, db: Session, destination_id: int):
-        """ID로 목적지 조회"""
-        try:
-            return db.query(cls).filter(cls.destination_id == destination_id).first()
-            
-        except SQLAlchemyError as e:
-            raise Exception(f"목적지 조회 실패: {str(e)}")
+    # @classmethod
+    # def check_duplicate(
+    #     cls,
+    #     db: Session,
+    #     user_id: int,
+    #     reference_id: int,
+    #     place_type: int
+    # ) -> bool:
+    #     """중복 목적지 체크"""
+    #     try:
+    #         existing = db.query(cls).filter(
+    #             cls.user_id == user_id,
+    #             cls.reference_id == reference_id,
+    #             cls.place_type == place_type
+    #         ).first()
+    #         
+    #         return existing is not None
+    #         
+    #     except SQLAlchemyError as e:
+    #         raise Exception(f"중복 체크 실패: {str(e)}")
     
-    @classmethod
-    def get_user_destinations(cls, db: Session, user_id: int):
-        """사용자의 모든 목적지 조회"""
-        try:
-            return db.query(cls).filter(cls.user_id == user_id).order_by(cls.created_at.desc()).all()
-            
-        except SQLAlchemyError as e:
-            raise Exception(f"사용자 목적지 조회 실패: {str(e)}")
+    # @classmethod
+    # def get_by_id(cls, db: Session, destination_id: int):
+    #     """ID로 목적지 조회"""
+    #     try:
+    #         return db.query(cls).filter(cls.destination_id == destination_id).first()
+    #         
+    #     except SQLAlchemyError as e:
+    #         raise Exception(f"목적지 조회 실패: {str(e)}")
     
-    def to_dict(self):
-        """객체를 딕셔너리로 변환"""
-        return {
-            "destination_id": self.destination_id,
-            "user_id": self.user_id,
-            "name": self.name,
-            "place_type": self.place_type,
-            "reference_id": self.reference_id,
-            "latitude": float(self.latitude) if self.latitude else None,
-            "longitude": float(self.longitude) if self.longitude else None,
-            "extracted_from_convers_id": self.extracted_from_convers_id,
-            "created_at": self.created_at
-        }
+    # @classmethod
+    # def get_user_destinations(cls, db: Session, user_id: int):
+    #     """사용자의 모든 목적지 조회"""
+    #     try:
+    #         return db.query(cls).filter(cls.user_id == user_id).order_by(cls.created_at.desc()).all()
+    #         
+    #     except SQLAlchemyError as e:
+    #         raise Exception(f"사용자 목적지 조회 실패: {str(e)}")
+    
+    # def to_dict(self):
+    #     """객체를 딕셔너리로 변환"""
+    #     return {
+    #         "destination_id": self.destination_id,
+    #         "user_id": self.user_id,
+    #         "name": self.name,
+    #         "place_type": self.place_type,
+    #         "reference_id": self.reference_id,
+    #         "latitude": float(self.latitude) if self.latitude else None,
+    #         "longitude": float(self.longitude) if self.longitude else None,
+    #         "extracted_from_convers_id": self.extracted_from_convers_id,
+    #         "created_at": self.created_at
+    #     }

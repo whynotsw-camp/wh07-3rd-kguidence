@@ -65,107 +65,111 @@ async def get_festival_by_id(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"축제 조회 오류: {str(e)}")
 
-@router.get("/status/ongoing", response_model=List[FestivalResponse])
-async def get_ongoing_festivals(
-    db: Session = Depends(get_db)
-):
-    """현재 진행 중인 축제 (ORM 버전)"""
-    try:
-        today = date.today()
-        
-        festivals = db.query(Festival).filter(
-            and_(
-                Festival.start_date <= today,
-                Festival.end_date >= today
-            )
-        ).order_by(Festival.start_date).all()
-        
-        return festivals
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"진행 중인 축제 조회 오류: {str(e)}")
+##############################################
+# 당장 안 쓰는 기능들 - 필요할 때 활성화
+##############################################
 
-@router.get("/status/upcoming", response_model=List[FestivalResponse])
-async def get_upcoming_festivals(
-    db: Session = Depends(get_db)
-):
-    """예정된 축제 (ORM 버전)"""
-    try:
-        today = date.today()
-        
-        festivals = db.query(Festival).filter(
-            Festival.start_date > today
-        ).order_by(Festival.start_date).limit(50).all()
-        
-        return festivals
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"예정된 축제 조회 오류: {str(e)}")
+# @router.get("/status/ongoing", response_model=List[FestivalResponse])
+# async def get_ongoing_festivals(
+#     db: Session = Depends(get_db)
+# ):
+#     """현재 진행 중인 축제 (ORM 버전)"""
+#     try:
+#         today = date.today()
+#         
+#         festivals = db.query(Festival).filter(
+#             and_(
+#                 Festival.start_date <= today,
+#                 Festival.end_date >= today
+#             )
+#         ).order_by(Festival.start_date).all()
+#         
+#         return festivals
+#     
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"진행 중인 축제 조회 오류: {str(e)}")
 
-@router.get("/search/query", response_model=List[FestivalResponse])
-async def search_festivals(
-    q: str,
-    db: Session = Depends(get_db)
-):
-    """축제 검색 (ORM 버전)"""
-    try:
-        if len(q.strip()) < 2:
-            raise HTTPException(status_code=400, detail="검색어는 2글자 이상이어야 합니다")
-        
-        # 제목 또는 설명에서 검색
-        festivals = db.query(Festival).filter(
-            or_(
-                Festival.title.contains(q),
-                Festival.description.contains(q)
-            )
-        ).order_by(Festival.start_date.desc()).limit(100).all()
-        
-        return festivals
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"축제 검색 오류: {str(e)}")
+# @router.get("/status/upcoming", response_model=List[FestivalResponse])
+# async def get_upcoming_festivals(
+#     db: Session = Depends(get_db)
+# ):
+#     """예정된 축제 (ORM 버전)"""
+#     try:
+#         today = date.today()
+#         
+#         festivals = db.query(Festival).filter(
+#             Festival.start_date > today
+#         ).order_by(Festival.start_date).limit(50).all()
+#         
+#         return festivals
+#     
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"예정된 축제 조회 오류: {str(e)}")
 
-@router.get("/filter/type/{filter_type}", response_model=List[FestivalResponse])
-async def get_festivals_by_type(
-    filter_type: str,
-    limit: int = 50,
-    db: Session = Depends(get_db)
-):
-    """축제 유형별 조회 (ORM 버전)"""
-    try:
-        festivals = db.query(Festival).filter(
-            Festival.filter_type == filter_type
-        ).order_by(Festival.start_date.desc()).limit(limit).all()
-        
-        return festivals
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"유형별 축제 조회 오류: {str(e)}")
+# @router.get("/search/query", response_model=List[FestivalResponse])
+# async def search_festivals(
+#     q: str,
+#     db: Session = Depends(get_db)
+# ):
+#     """축제 검색 (ORM 버전)"""
+#     try:
+#         if len(q.strip()) < 2:
+#             raise HTTPException(status_code=400, detail="검색어는 2글자 이상이어야 합니다")
+#         
+#         # 제목 또는 설명에서 검색
+#         festivals = db.query(Festival).filter(
+#             or_(
+#                 Festival.title.contains(q),
+#                 Festival.description.contains(q)
+#             )
+#         ).order_by(Festival.start_date.desc()).limit(100).all()
+#         
+#         return festivals
+#     
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"축제 검색 오류: {str(e)}")
 
-@router.get("/date/range", response_model=List[FestivalResponse])
-async def get_festivals_by_date_range(
-    start_date: date,
-    end_date: date,
-    db: Session = Depends(get_db)
-):
-    """날짜 범위별 축제 조회 (ORM 버전)"""
-    try:
-        if start_date > end_date:
-            raise HTTPException(status_code=400, detail="시작 날짜가 종료 날짜보다 늦습니다")
-        
-        festivals = db.query(Festival).filter(
-            or_(
-                and_(Festival.start_date >= start_date, Festival.start_date <= end_date),
-                and_(Festival.end_date >= start_date, Festival.end_date <= end_date),
-                and_(Festival.start_date <= start_date, Festival.end_date >= end_date)
-            )
-        ).order_by(Festival.start_date).all()
-        
-        return festivals
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"날짜별 축제 조회 오류: {str(e)}")
+# @router.get("/filter/type/{filter_type}", response_model=List[FestivalResponse])
+# async def get_festivals_by_type(
+#     filter_type: str,
+#     limit: int = 50,
+#     db: Session = Depends(get_db)
+# ):
+#     """축제 유형별 조회 (ORM 버전)"""
+#     try:
+#         festivals = db.query(Festival).filter(
+#             Festival.filter_type == filter_type
+#         ).order_by(Festival.start_date.desc()).limit(limit).all()
+#         
+#         return festivals
+#     
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"유형별 축제 조회 오류: {str(e)}")
+
+# @router.get("/date/range", response_model=List[FestivalResponse])
+# async def get_festivals_by_date_range(
+#     start_date: date,
+#     end_date: date,
+#     db: Session = Depends(get_db)
+# ):
+#     """날짜 범위별 축제 조회 (ORM 버전)"""
+#     try:
+#         if start_date > end_date:
+#             raise HTTPException(status_code=400, detail="시작 날짜가 종료 날짜보다 늦습니다")
+#         
+#         festivals = db.query(Festival).filter(
+#             or_(
+#                 and_(Festival.start_date >= start_date, Festival.start_date <= end_date),
+#                 and_(Festival.end_date >= start_date, Festival.end_date <= end_date),
+#                 and_(Festival.start_date <= start_date, Festival.end_date >= end_date)
+#             )
+#         ).order_by(Festival.start_date).all()
+#         
+#         return festivals
+#     
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"날짜별 축제 조회 오류: {str(e)}")
