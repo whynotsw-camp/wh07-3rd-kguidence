@@ -1,8 +1,13 @@
+"""
+ODsay API 대중교통 경로 검색
+ODsay API를 사용한 출발지-도착지 간 대중교통 경로 검색 및 폴리라인 생성
+"""
 import requests
 import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
+import traceback
 
 # 환경 변수에서 ODSAY_API_KEY를 불러옵니다.
 ODSAY_API_KEY = os.getenv("ODSAY_API_KEY") 
@@ -57,6 +62,9 @@ def convert_to_english(sub_path: Dict[str, Any]) -> None:
     subPath 항목을 영문으로 변환
     - trafficName: Subway / Bus / Walk
     - sectionTimeText: "Walk 4 min" 등
+    
+    Args:
+        sub_path: ODsay API의 subPath 항목 (dict)
     """
     traffic_type = sub_path.get('trafficType', 3)
     sub_path['trafficName'] = TRAFFIC_MAP.get(traffic_type, "Unknown")
@@ -76,10 +84,38 @@ def convert_to_english(sub_path: Dict[str, Any]) -> None:
 async def search_route(request: RouteRequest):
     """
     POST /api/search/route
+    
     ODsay API를 호출하고 구간별 폴리라인, 상세 경로 정보를 반환합니다.
+    
+    Args:
+        request: RouteRequest {
+            startLat: 출발지 위도,
+            startLng: 출발지 경도,
+            endLat: 도착지 위도,
+            endLng: 도착지 경도
+        }
+        
+    Returns:
+        RouteResponse {
+            segmentedPath: 구간별 좌표 배열,
+            totalTime: 총 소요 시간 (분),
+            fare: 요금 (원),
+            subPath: 경로 상세 정보,
+            fullData: ODsay API 원본 응답
+        }
+        
+    Raises:
+        HTTPException 500: ODSAY_API_KEY가 설정되지 않음
+        HTTPException 404: 경로를 찾을 수 없음
+        HTTPException 503: 외부 API 연결 실패
     """
+    
     if not ODSAY_API_KEY:
-        raise HTTPException(status_code=500, detail="서버 환경 설정 오류: ODSAY_API_KEY가 설정되지 않았습니다.")
+        print("❌ ODSAY_API_KEY not set")
+        raise HTTPException(
+            status_code=500, 
+            detail="서버 환경 설정 오류: ODSAY_API_KEY가 설정되지 않았습니다."
+        )
 
     params = {
         'apiKey': ODSAY_API_KEY, 
@@ -92,23 +128,49 @@ async def search_route(request: RouteRequest):
     }
 
     try:
+        print(f"🚀 ODsay API 호출: start=({request.startLat},{request.startLng}), end=({request.endLat},{request.endLng})")
+        
         response = requests.get(ODSAY_URL, params=params, timeout=10)
         response.raise_for_status()
         data: Dict[str, Any] = response.json()
+        
+        print(f"📦 ODsay API 응답 status: {response.status_code}")
 
+        # error 체크 (dict 또는 list일 수 있음)
         if data.get('error'):
-            error_msg = data['error']['message']
-            raise HTTPException(status_code=404, detail=f"ODsay 경로 검색 실패: {error_msg}")
+            error = data['error']
+            
+            # error의 타입에 따라 다르게 처리
+            if isinstance(error, dict):
+                error_msg = error.get('message', 'Unknown error')
+            elif isinstance(error, list) and len(error) > 0:
+                error_msg = str(error[0])
+            else:
+                error_msg = str(error)
+            
+            print(f"❌ ODsay API Error: {error_msg}")
+            raise HTTPException(
+                status_code=404, 
+                detail=f"ODsay 경로 검색 실패: {error_msg}"
+            )
 
+        # result 및 path 존재 확인
         if not data.get('result') or not data['result'].get('path'):
-            raise HTTPException(status_code=404, detail="출발지/도착지 사이의 유효한 경로를 찾을 수 없습니다.")
+            print("❌ ODsay: 경로 없음")
+            raise HTTPException(
+                status_code=404, 
+                detail="출발지/도착지 사이의 유효한 경로를 찾을 수 없습니다."
+            )
 
+        # 첫 번째 경로 선택
         path_result = data['result']['path'][0]
 
         # 1. 핵심 정보 추출
-        total_time = path_result['info'].get('totalTime', 0)
-        fare = path_result['info'].get('payment', 0)
+        total_time = path_result.get('info', {}).get('totalTime', 0)
+        fare = path_result.get('info', {}).get('payment', 0)
         sub_paths = path_result.get('subPath', [])
+        
+        print(f"✅ 경로 찾음: {len(sub_paths)}개 구간, {total_time}분, {fare}원")
 
         # 2. subPath 항목 영문 변환
         for sub_path in sub_paths:
@@ -116,27 +178,56 @@ async def search_route(request: RouteRequest):
 
         # 3. 폴리라인 좌표 추출 및 세그먼트 생성
         segmented_paths: List[SegmentPath] = []
-        current_segment_coords: List[PathNode] = [PathNode(lat=request.startLat, lng=request.startLng)]
+        current_segment_coords: List[PathNode] = [
+            PathNode(lat=request.startLat, lng=request.startLng)
+        ]
 
-        for sub_path in sub_paths:
+        for idx, sub_path in enumerate(sub_paths):
             traffic_type = sub_path.get('trafficType', 3)
             segment_coords = []
 
+            # 이전 구간의 마지막 좌표를 현재 구간의 시작점으로
             if current_segment_coords:
                 segment_coords.append(current_segment_coords[-1])
 
-            if sub_path.get('passStopList') and sub_path['passStopList'].get('stations'):
-                for station in sub_path['passStopList']['stations']:
-                    segment_coords.append(PathNode(lat=station['y'], lng=station['x']))
+            # 안전한 stations 접근
+            pass_stop_list = sub_path.get('passStopList')
+            if pass_stop_list:
+                stations = pass_stop_list.get('stations')
+                
+                # stations가 리스트인 경우 (정상)
+                if stations and isinstance(stations, list):
+                    for station in stations:
+                        if isinstance(station, dict):
+                            lat = station.get('y')
+                            lng = station.get('x')
+                            if lat is not None and lng is not None:
+                                segment_coords.append(PathNode(lat=lat, lng=lng))
+                        else:
+                            print(f"⚠️ 구간 {idx}: station이 dict가 아님 - {type(station)}")
+                
+                # stations가 딕셔너리인 경우 (예외)
+                elif stations and isinstance(stations, dict):
+                    print(f"⚠️ 구간 {idx}: stations가 dict임 (list 기대) - keys: {list(stations.keys())}")
+                    # 필요시 딕셔너리 처리 로직 추가
+                
+                # stations가 다른 타입인 경우
+                elif stations:
+                    print(f"⚠️ 구간 {idx}: stations 타입 불명 - {type(stations)}")
 
-            if sub_path.get('endX'):
-                segment_coords.append(PathNode(lat=sub_path['endY'], lng=sub_path['endX']))
+            # 안전한 endX/endY 접근
+            end_x = sub_path.get('endX')
+            end_y = sub_path.get('endY')
+            if end_x is not None and end_y is not None:
+                segment_coords.append(PathNode(lat=end_y, lng=end_x))
 
+            # 유효한 세그먼트만 추가 (좌표가 2개 이상)
             if len(segment_coords) > 1:
                 segmented_paths.append(SegmentPath(
                     trafficType=traffic_type,
                     coordinates=segment_coords
                 ))
+                print(f"  ✓ 구간 {idx}: {len(segment_coords)}개 좌표")
 
             current_segment_coords = segment_coords
 
@@ -150,11 +241,27 @@ async def search_route(request: RouteRequest):
         )
 
     except requests.exceptions.HTTPError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"외부 API 통신 오류: HTTP {e.response.status_code}")
+        print(f"❌ HTTP 에러: {e.response.status_code}")
+        raise HTTPException(
+            status_code=e.response.status_code, 
+            detail=f"외부 API 통신 오류: HTTP {e.response.status_code}"
+        )
+    
     except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=503, detail="외부 경로 API와의 연결에 실패했습니다. (Timeout 등)")
+        print(f"❌ 요청 에러: {e}")
+        raise HTTPException(
+            status_code=503, 
+            detail="외부 경로 API와의 연결에 실패했습니다. (Timeout 등)"
+        )
+    
     except HTTPException:
+        # 이미 발생한 HTTPException은 그대로 재발생
         raise
+    
     except Exception as e:
-        print(f"서버 내부 오류: {e}")
-        raise HTTPException(status_code=500, detail="경로 데이터 처리 중 알 수 없는 서버 오류가 발생했습니다.")
+        print(f"❌ 서버 내부 오류: {type(e).__name__} - {e}")
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500, 
+            detail=f"경로 데이터 처리 중 알 수 없는 서버 오류가 발생했습니다."
+        )

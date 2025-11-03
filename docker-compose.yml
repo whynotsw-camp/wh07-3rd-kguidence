@@ -51,6 +51,8 @@ services:
       - SECRET_KEY=your-super-secret-key-change-in-production-min-32-chars
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - SESSION_EXPIRE_HOURS=24
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}      # ← 추가
+      - ODSAY_API_KEY=${ODSAY_API_KEY}        # ← 추가
     ports:
       - "8000:8000"
     volumes:

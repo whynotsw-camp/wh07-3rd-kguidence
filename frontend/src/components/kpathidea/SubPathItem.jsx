@@ -1,6 +1,6 @@
-// src/components/SubPathItem.jsx
+// src/components/kpathidea/SubPathItem.jsx
 import React, { useState } from 'react';
-import { BusFront, Clock, PersonStanding, Train, Repeat2 } from 'lucide-react';
+import { BusFront, PersonStanding, Train, Repeat2 } from 'lucide-react';
 
 const SubPathItem = ({ path, index, subPathArray }) => {
     const [isPassStopsVisible, setIsPassStopsVisible] = useState(false);
