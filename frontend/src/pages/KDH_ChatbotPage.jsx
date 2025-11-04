@@ -71,7 +71,9 @@ function KDH_ChatbotPage() {
                 text: data.response,
                 isUser: false,
                 timestamp: new Date(),
-                extractedDestinations: data.extracted_destinations || []
+                extractedDestinations: data.extracted_destinations || [],
+                festivals: data.festivals || [],  // ← 추가!
+                hasFestivals: data.has_festivals  // ← 추가!
             };
             setMessages(prev => [...prev, aiMessage]);
 
