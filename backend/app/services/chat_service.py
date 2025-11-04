@@ -15,6 +15,7 @@ class ChatService:
     # 🎯 Qdrant 설정
     QDRANT_URL = "http://172.20.0.1:6333"  # 🎯 실제 호스트 IP
     COLLECTION_NAME = "seoul-festival"
+    ATTRACTION_COLLECTION = "seoul-attraction"  # 관광명소 컬렉션 (추가)
     
     @staticmethod
     def send_message(db: Session, user_id: int, message: str) -> Dict[str, Any]:
@@ -254,6 +255,65 @@ class ChatService:
             else:
                 return "안녕하세요! 축제나 행사에 대해 궁금한 것이 있으시면 언제든 물어보세요! 😊"
     
+    
+    @staticmethod
+    def _search_best_attraction(keyword: str) -> Dict[str, Any]:
+        """
+        🎯 관광명소 벡터 검색
+        """
+        try:
+            qdrant_client = QdrantClient(
+                url=ChatService.QDRANT_URL,
+                timeout=60,
+                prefer_grpc=False
+            )
+            
+            embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002")
+            query_embedding = embedding_model.embed_query(keyword)
+            
+            search_results = qdrant_client.search(
+                collection_name=ChatService.ATTRACTION_COLLECTION,
+                query_vector=query_embedding,
+                limit=1,
+                score_threshold=0.3,
+                with_payload=True,
+                with_vectors=False
+            )
+            
+            if not search_results:
+                print(f"🔍 관광명소 검색 결과 없음: '{keyword}'")
+                return None
+            
+            result = search_results[0]
+            attraction_data = result.payload.get("metadata", {})
+            
+            formatted_data = {
+                "attr_id": attraction_data.get("attr_id"),
+                "title": attraction_data.get("title"),
+                "url": attraction_data.get("url"),
+                "description": attraction_data.get("description"),
+                "phone": attraction_data.get("phone"),
+                "hours_of_operation": attraction_data.get("hours_of_operation"),
+                "holidays": attraction_data.get("holidays"),
+                "address": attraction_data.get("address"),
+                "transportation": attraction_data.get("transportation"),
+                "image_urls": attraction_data.get("image_urls"),
+                "image_count": attraction_data.get("image_count", 0),
+                "latitude": float(attraction_data.get("latitude", 0)),
+                "longitude": float(attraction_data.get("longitude", 0)),
+                "attr_code": attraction_data.get("attr_code"),
+                "similarity_score": result.score
+            }
+            
+            print(f"🎯 관광명소 검색 성공: '{formatted_data['title']}' (유사도: {result.score:.3f})")
+            return formatted_data
+            
+        except Exception as e:
+            print(f"관광명소 검색 오류: {e}")
+            return None
+    
+    
+    
     @staticmethod
     def get_conversation_history(db: Session, user_id: int, limit: int = 50) -> List[Dict]:
         """
@@ -272,3 +332,6 @@ class ChatService:
             }
             for conv in reversed(conversations)
         ]
+    
+            # ... 나머지 코드 ...
+            
