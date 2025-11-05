@@ -216,6 +216,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
         } catch (error) {
             console.error('검색 중 오류 발생:', error);
             setMessage(`통신 오류: ${error.message}.`);
+
         } finally {
             setIsLoading(false);
         }
