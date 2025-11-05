@@ -1,4 +1,4 @@
-// src/components/NaverMap.jsx (URL 수정된 버전)
+// src/components/NaverMap.jsx
 import React, { useEffect, useRef, useState } from 'react';
 
 const NAVER_MAPS_CLIENT_ID = process.env.REACT_APP_NAVER_MAPS_CLIENT_ID;
@@ -47,17 +47,22 @@ const NaverMap = () => {
         };
     }, []);
 
-    // 전역 함수로 마커 추가 기능 제공
+    // 🎯 통합 마커 추가 함수 (축제 + 관광명소)
     useEffect(() => {
         if (map) {
+            window.addMapMarkers = (mapMarkers) => {
+                addMarkers(mapMarkers);
+            };
+            
+            // 기존 호환성 유지
             window.addFestivalMarkers = (mapMarkers) => {
                 addMarkers(mapMarkers);
             };
         }
     }, [map]);
 
-    // 🎯 destinations 테이블에 추가하는 함수 (일차 포함)
-    const addToDestinations = async (markerData, festivalId) => {
+    // 🎯 일정에 추가 (축제 + 관광명소 모두 지원)
+    const addToDestinations = async (markerData, itemId) => {
         try {
             const sessionId = localStorage.getItem('session_id');
             if (!sessionId) {
@@ -65,26 +70,30 @@ const NaverMap = () => {
                 return;
             }
 
-            // 입력된 일차 값 가져오기
-            const dayInput = document.getElementById(`dayInput_${festivalId}`);
+            const dayInput = document.getElementById(`dayInput_${itemId}`);
             const dayNumber = parseInt(dayInput.value) || 1;
             
-            // 유효성 검사
             if (dayNumber < 1 || dayNumber > 30) {
                 alert('❌ 1일차부터 30일차까지만 입력 가능합니다.');
                 return;
             }
 
+            // 🎯 타입에 따라 place_type 결정
+            const placeType = markerData.type === 'attraction' ? 1 : 2;  // 1: 관광명소, 2: 축제
+            const referenceId = markerData.type === 'attraction' 
+                ? markerData.attr_id 
+                : markerData.festival_id;
+
             const destinationData = {
                 name: markerData.title,
-                day_number: dayNumber,  // 사용자가 입력한 일차
-                place_type: 2, // 축제는 2
-                reference_id: markerData.id || markerData.festival_id || null,  // 🎯 둘 다 시도
+                day_number: dayNumber,
+                place_type: placeType,
+                reference_id: referenceId,
                 latitude: parseFloat(markerData.latitude),
                 longitude: parseFloat(markerData.longitude)
             };
 
-            const response = await fetch('http://localhost:8000/api/destinations/add', {  // ✅ URL 수정
+            const response = await fetch('http://localhost:8000/api/destinations/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -115,79 +124,120 @@ const NaverMap = () => {
 
         mapMarkers.forEach((markerData) => {
             if (markerData.latitude && markerData.longitude) {
-                // 기본 마커 생성
+                
+                // 🎯 마커 아이콘 타입별 구분
+                const markerIcon = markerData.type === 'attraction' 
+                    ? {
+                        content: '<div style="background: #4285f4; color: white; padding: 8px 12px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">📍</div>',
+                        anchor: new window.naver.maps.Point(20, 20)
+                    }
+                    : {
+                        content: '<div style="background: #ea4335; color: white; padding: 8px 12px; border-radius: 20px; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">🎭</div>',
+                        anchor: new window.naver.maps.Point(20, 20)
+                    };
+
                 const marker = new window.naver.maps.Marker({
                     position: new window.naver.maps.LatLng(markerData.latitude, markerData.longitude),
                     map: map,
-                    title: markerData.title
+                    title: markerData.title,
+                    icon: markerIcon
                 });
 
-                // 🎯 일차 입력이 포함된 Add 버튼 정보창
+                // 🎯 정보창 내용 - 타입별로 다르게 표시
+                const itemId = markerData.type === 'attraction' ? markerData.attr_id : markerData.festival_id;
+                
+                let infoContent = `
+                    <div style="padding: 15px; max-width: 280px; font-family: Arial, sans-serif;">
+                        <h4 style="margin: 0 0 8px 0; color: #333; font-size: 16px; font-weight: bold;">
+                            ${markerData.type === 'attraction' ? '📍' : '🎭'} ${markerData.title}
+                        </h4>
+                `;
+
+                // 축제 정보
+                if (markerData.type === 'festival') {
+                    if (markerData.start_date && markerData.end_date) {
+                        infoContent += `
+                            <p style="margin: 5px 0; font-size: 13px; color: #666; background: #fff3cd; padding: 4px 8px; border-radius: 4px;">
+                                📅 ${markerData.start_date} ~ ${markerData.end_date}
+                            </p>
+                        `;
+                    }
+                }
+                
+                // 관광명소 정보
+                if (markerData.type === 'attraction') {
+                    if (markerData.address) {
+                        infoContent += `
+                            <p style="margin: 5px 0; font-size: 12px; color: #666;">
+                                📍 ${markerData.address.substring(0, 40)}${markerData.address.length > 40 ? '...' : ''}
+                            </p>
+                        `;
+                    }
+                    if (markerData.phone && markerData.phone !== 'nan') {
+                        infoContent += `
+                            <p style="margin: 5px 0; font-size: 12px; color: #666;">
+                                📞 ${markerData.phone}
+                            </p>
+                        `;
+                    }
+                }
+
+                infoContent += `
+                    <!-- 일차 입력 -->
+                    <div style="margin: 10px 0; text-align: center;">
+                        <input 
+                            type="number" 
+                            id="dayInput_${itemId}" 
+                            placeholder="몇일차?" 
+                            min="1" 
+                            max="30"
+                            value="1"
+                            style="
+                                width: 80px;
+                                padding: 6px 8px;
+                                border: 2px solid #ddd;
+                                border-radius: 4px;
+                                text-align: center;
+                                font-size: 14px;
+                                margin-right: 8px;
+                            "
+                        />
+                        <span style="font-size: 13px; color: #666;">일차</span>
+                    </div>
+                    
+                    <div style="margin-top: 12px; text-align: center;">
+                        <button 
+                            onclick="addToDestinations_${itemId}()" 
+                            style="
+                                background: ${markerData.type === 'attraction' ? '#4285f4' : '#ff4444'};
+                                color: white;
+                                border: none;
+                                padding: 8px 16px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 13px;
+                                font-weight: bold;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                                transition: all 0.3s ease;
+                            "
+                            onmouseover="this.style.transform='translateY(-1px)'"
+                            onmouseout="this.style.transform='translateY(0px)'"
+                        >
+                            ➕ Add to Schedule
+                        </button>
+                    </div>
+                </div>
+                `;
+
                 const infoWindow = new window.naver.maps.InfoWindow({
-                    content: `
-                        <div style="padding: 15px; max-width: 250px; font-family: Arial, sans-serif;">
-                            <h4 style="margin: 0 0 8px 0; color: #333; font-size: 16px; font-weight: bold;">
-                                ${markerData.title}
-                            </h4>
-                            ${markerData.start_date && markerData.end_date ? `
-                                <p style="margin: 5px 0; font-size: 13px; color: #666; background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">
-                                    📅 ${markerData.start_date} ~ ${markerData.end_date}
-                                </p>
-                            ` : ''}
-                            
-                            <!-- 일차 입력 필드 추가 -->
-                            <div style="margin: 10px 0; text-align: center;">
-                                <input 
-                                    type="number" 
-                                    id="dayInput_${markerData.festival_id}" 
-                                    placeholder="몇일차?" 
-                                    min="1" 
-                                    max="30"
-                                    value="1"
-                                    style="
-                                        width: 80px;
-                                        padding: 6px 8px;
-                                        border: 2px solid #ddd;
-                                        border-radius: 4px;
-                                        text-align: center;
-                                        font-size: 14px;
-                                        margin-right: 8px;
-                                    "
-                                />
-                                <span style="font-size: 13px; color: #666;">일차</span>
-                            </div>
-                            
-                            <div style="margin-top: 12px; text-align: center;">
-                                <button 
-                                    onclick="addToDestinations_${markerData.festival_id || 'unknown'}()" 
-                                    style="
-                                        background: #ff4444;
-                                        color: white;
-                                        border: none;
-                                        padding: 8px 16px;
-                                        border-radius: 6px;
-                                        cursor: pointer;
-                                        font-size: 13px;
-                                        font-weight: bold;
-                                        box-shadow: 0 2px 4px rgba(255, 68, 68, 0.3);
-                                        transition: all 0.3s ease;
-                                    "
-                                    onmouseover="this.style.background='#ff3333'; this.style.transform='translateY(-1px)'"
-                                    onmouseout="this.style.background='#ff4444'; this.style.transform='translateY(0px)'"
-                                >
-                                    ➕ Add
-                                </button>
-                            </div>
-                        </div>
-                    `
+                    content: infoContent
                 });
 
-                // 🎯 각 마커별 고유한 전역 함수 생성 (일차 포함)
-                window[`addToDestinations_${markerData.festival_id || 'unknown'}`] = () => {
-                    addToDestinations(markerData, markerData.festival_id);
+                // 🎯 각 마커별 고유한 전역 함수 생성
+                window[`addToDestinations_${itemId}`] = () => {
+                    addToDestinations(markerData, itemId);
                 };
 
-                // 마커 클릭 시 정보창 표시
                 window.naver.maps.Event.addListener(marker, 'click', () => {
                     infoWindow.open(map, marker);
                 });
@@ -198,7 +248,7 @@ const NaverMap = () => {
 
         setMarkers(newMarkers);
 
-        // 첫 번째 마커 위치로 지도 이동
+        // 첫 번째 마커로 이동
         if (newMarkers.length > 0) {
             const firstMarker = mapMarkers[0];
             map.setCenter(new window.naver.maps.LatLng(firstMarker.latitude, firstMarker.longitude));

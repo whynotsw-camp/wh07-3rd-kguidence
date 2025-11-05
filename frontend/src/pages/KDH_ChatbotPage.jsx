@@ -8,7 +8,6 @@ function KDH_ChatbotPage() {
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
-    // 초기 메시지
     useEffect(() => {
         setMessages([
             {
@@ -20,16 +19,13 @@ function KDH_ChatbotPage() {
         ]);
     }, []);
 
-    // 자동 스크롤
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // 메시지 전송 핸들러
     const handleSendMessage = async (text) => {
         if (!text.trim()) return;
 
-        // 사용자 메시지 추가
         const userMessage = {
             id: Date.now(),
             text: text,
@@ -40,13 +36,11 @@ function KDH_ChatbotPage() {
         setLoading(true);
 
         try {
-            // Authorization 헤더 추가
             const sessionId = localStorage.getItem('session_id');
             if (!sessionId) {
                 throw new Error('로그인이 필요합니다');
             }
 
-            // API 호출 - Authorization 헤더 방식
             const response = await fetch('http://localhost:8000/api/chat/send', {
                 method: 'POST',
                 headers: {
@@ -65,29 +59,40 @@ function KDH_ChatbotPage() {
 
             const data = await response.json();
 
-            // AI 응답 추가
+            // 🎯 AI 응답 추가 (results 포함)
             const aiMessage = {
                 id: Date.now() + 1,
                 text: data.response,
                 isUser: false,
                 timestamp: new Date(),
                 extractedDestinations: data.extracted_destinations || [],
-                festivals: data.festivals || [],  // ← 추가!
-                hasFestivals: data.has_festivals  // ← 추가!
+                results: data.results || [],              // 🎯 통합 결과 추가
+                festivals: data.festivals || [],
+                attractions: data.attractions || [],
+                hasFestivals: data.has_festivals,
+                hasAttractions: data.has_attractions
             };
             setMessages(prev => [...prev, aiMessage]);
 
-            // 🎯 축제 정보가 있으면 지도에 마커 추가
-            if (data.has_festivals && data.map_markers && data.map_markers.length > 0) {
-                if (window.addFestivalMarkers) {
-                    window.addFestivalMarkers(data.map_markers);
+            // 🎯 지도 마커 추가
+            if (data.map_markers && data.map_markers.length > 0) {
+                if (window.addMapMarkers) {
+                    window.addMapMarkers(data.map_markers);
+                } else {
+                    if (data.has_festivals && window.addFestivalMarkers) {
+                        const festivalMarkers = data.map_markers.filter(m => m.type === 'festival');
+                        window.addFestivalMarkers(festivalMarkers);
+                    }
+                    if (data.has_attractions && window.addAttractionMarkers) {
+                        const attractionMarkers = data.map_markers.filter(m => m.type === 'attraction');
+                        window.addAttractionMarkers(attractionMarkers);
+                    }
                 }
             }
 
         } catch (error) {
             console.error('Error sending message:', error);
             
-            // 에러 메시지
             const errorMessage = {
                 id: Date.now() + 1,
                 text: error.message === '로그인이 필요합니다' || error.message === '로그인이 만료되었습니다. 다시 로그인해주세요.' 
@@ -99,7 +104,6 @@ function KDH_ChatbotPage() {
             };
             setMessages(prev => [...prev, errorMessage]);
 
-            // 로그인 만료 시 메인 페이지로 이동
             if (error.message.includes('로그인')) {
                 localStorage.removeItem('session_id');
                 setTimeout(() => {
@@ -114,7 +118,6 @@ function KDH_ChatbotPage() {
     return (
         <div className="kdh-chatbot-container">
             <main className="kdh-main-chat-area">
-                {/* 상단 헤더 */}
                 <header className="kdh-chat-header">
                     <span className="kdh-header-back-icon">←</span>
                     <span className="kdh-chat-title">K-POP DEMON HUNTERS</span>
@@ -128,7 +131,6 @@ function KDH_ChatbotPage() {
                     </div>
                 </header>
 
-                {/* 메시지 영역 */}
                 <section className="kdh-message-area">
                     {messages.map((message) => (
                         <ChatMessage 
@@ -137,18 +139,15 @@ function KDH_ChatbotPage() {
                         />
                     ))}
                     
-                    {/* 로딩 표시 */}
                     {loading && (
                         <div className="kdh-chatbot-message">
                             <span className="typing-indicator">AI is typing...</span>
                         </div>
                     )}
                     
-                    {/* 스크롤 타겟 */}
                     <div ref={messagesEndRef} />
                 </section>
 
-                {/* 하단 제안 및 입력 영역 */}
                 <footer className="chat-footer">
                     <div className="suggested-routes">
                         <span className="suggest-title">SUGGEST ROUTES</span>
@@ -180,7 +179,6 @@ function KDH_ChatbotPage() {
                         </div>
                     </div>
                     
-                    {/* ChatInput 컴포넌트 사용 */}
                     <ChatInput 
                         onSend={handleSendMessage} 
                         disabled={loading}

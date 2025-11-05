@@ -1,35 +1,141 @@
-/* components/chat/Chat.css */
+/* Chat.css에 추가할 스타일 */
 
-/* 축제 이미지만 표시 */
-.festivals-images {
+/* 기존 chat-message 스타일은 유지하고 아래 추가 */
+
+/* 메시지 텍스트 */
+.message-text {
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 8px;
+}
+
+/* 이미지 영역 (카드 없음, 자연스러운 배치) */
+.message-images {
+    margin-top: 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin-top: 15px;
+    gap: 12px;
 }
 
-.festival-image-wrapper {
-    width: 100%;
-    max-width: 450px;
+.image-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.festival-image-only {
+/* 이미지 스타일 */
+.content-image {
     width: 100%;
+    max-width: 400px;
     height: auto;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    display: block;
-    transition: transform 0.2s;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.festival-image-only:hover {
+.content-image:hover {
     transform: scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
 }
 
-/* 모바일 대응 */
+/* 이미지 캡션 (제목 + 간단한 정보) */
+.image-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+.caption-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.caption-date,
+.caption-address {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+/* 봇 메시지 내 캡션 색상 조정 */
+.bot .caption-title {
+    color: #212529;
+}
+
+.bot .caption-date,
+.bot .caption-address {
+    color: #6c757d;
+}
+
+/* 사용자 메시지 내 캡션 색상 (혹시 사용자가 이미지 첨부 시) */
+.user .caption-title {
+    color: white;
+}
+
+.user .caption-date,
+.user .caption-address {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* 타임스탬프 */
+.message-timestamp {
+    font-size: 11px;
+    color: #adb5bd;
+    margin-top: 6px;
+    text-align: right;
+}
+
+/* 에러 메시지 */
+.chat-message.error .message-text {
+    color: #ff6b6b;
+    font-weight: 500;
+}
+
+/* 반응형 */
 @media (max-width: 768px) {
-    .festival-image-wrapper {
+    .content-image {
         max-width: 100%;
     }
+    
+    .message-text {
+        font-size: 14px;
+    }
+    
+    .caption-title {
+        font-size: 13px;
+    }
+    
+    .caption-date,
+    .caption-address {
+        font-size: 12px;
+    }
 }
+
+/* 로딩 애니메이션 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-message {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* 
+  기존 스타일 참고:
+  - .chat-message.user: 사용자 메시지 (오른쪽 정렬)
+  - .chat-message.bot: 봇 메시지 (왼쪽 정렬)
+  
+  위 스타일은 기존 Chat.css와 병합하세요.
+*/
