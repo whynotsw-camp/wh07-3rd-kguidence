@@ -89,41 +89,37 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
     );
 
     // --- ⭐ 4. scheduleLocations 처리 (일정 선택 시 목적지 로드) ---
-    useEffect(() => {
-        if (!scheduleLocations || scheduleLocations.length === 0) {
-            // 목적지가 없으면 마커 초기화 (옵션)
-            // setUserMarkers([]);
-            // setMessage('📭 이 일정에는 아직 목적지가 없습니다.');
-            return;
-        }
+    // ✅ 일정 선택될 때마다 지도 마커를 즉시 재배치
+useEffect(() => {
+    if (!map) return;
 
-        console.log('📍 일정의 목적지들을 마커로 추가:', scheduleLocations);
-        
-        // ⭐ 기존 검색으로 추가한 마커는 유지하고 싶다면:
-        // setUserMarkers(prev => [...prev, ...scheduleLocations]);
-        
-        // ⭐ 일정의 목적지만 표시하고 싶다면 (권장):
-        setUserMarkers(scheduleLocations);
-        
-        setMessage(`📍 ${scheduleLocations.length} destinations loaded.`);
-        
-        // 첫 번째 목적지로 지도 중심 이동
-        if (map && scheduleLocations[0]) {
-            try {
-                const firstLocation = scheduleLocations[0];
-                map.setCenter(
-                    new window.naver.maps.LatLng(
-                        firstLocation.lat, 
-                        firstLocation.lng
-                    )
-                );
-                map.setZoom(13, true);
-                console.log(`🗺️ 지도 중심 이동: ${firstLocation.name}`);
-            } catch (e) {
-                console.warn('지도 중심 이동 실패', e);
-            }
-        }
-    }, [scheduleLocations, map]);
+    // 지도 마커 삭제
+    if (clearRoute) clearRoute();
+    if (mapObjectsRef.current) {
+        Object.values(mapObjectsRef.current).forEach(obj => obj.setMap(null));
+        mapObjectsRef.current = {};
+    }
+
+    if (!scheduleLocations || scheduleLocations.length === 0) {
+        setUserMarkers([]);
+        return;
+    }
+
+    // 마커 상태 업데이트
+    setUserMarkers([...scheduleLocations]);
+
+    // ✅ 상태 반영 후 마커 그리기 (핵심 추가)
+    setTimeout(() => {
+        setUserMarkers(scheduleLocations); // ✅ 이 한 줄이 핵심!!
+
+        // 중심 이동
+        const first = scheduleLocations[0];
+        map.setCenter(new window.naver.maps.LatLng(first.lat, first.lng));
+        map.setZoom(13);
+    }, 0);
+
+}, [scheduleLocations, map]);
+
 
     // --- 5. 통합 Ref 업데이트 (useEffect) ---
     useEffect(() => {
