@@ -1,141 +1,146 @@
-/* Chat.css에 추가할 스타일 */
+/* ============================================
+   💬 채팅 메시지 스타일 (수정)
+   ============================================ */
 
-/* 기존 chat-message 스타일은 유지하고 아래 추가 */
+/* 메시지 컨테이너 - 세로 배치로 변경 */
+.chat-message {
+    display: flex;
+    flex-direction: column; /* 세로 정렬 */
+    margin-bottom: 20px;
+    animation: messageSlideIn 0.3s ease-out;
+}
 
-/* 메시지 텍스트 */
+.chat-message.user {
+    align-items: flex-end; /* 오른쪽 정렬 */
+}
+
+.chat-message.bot {
+    align-items: flex-start; /* 왼쪽 정렬 */
+}
+
+/* 말풍선 텍스트 - 글씨 크기 증가 */
 .message-text {
-    font-size: 15px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin-bottom: 8px;
+    max-width: 70%;
+    padding: 18px 24px; /* 16px 20px → 18px 24px */
+    border-radius: 20px;
+    position: relative;
+    word-wrap: break-word;
+    line-height: 1.8; /* 1.6 → 1.8 */
+    font-size: 17px; /* 15px → 17px */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
 }
 
-/* 이미지 영역 (카드 없음, 자연스러운 배치) */
-.message-images {
-    margin-top: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.image-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-/* 이미지 스타일 */
-.content-image {
-    width: 100%;
-    max-width: 400px;
-    height: auto;
-    border-radius: 12px;
-    object-fit: cover;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.content-image:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    cursor: pointer;
-}
-
-/* 이미지 캡션 (제목 + 간단한 정보) */
-.image-caption {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 4px 0;
-}
-
-.caption-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #212529;
-}
-
-.caption-date,
-.caption-address {
-    font-size: 13px;
-    color: #6c757d;
-}
-
-/* 봇 메시지 내 캡션 색상 조정 */
-.bot .caption-title {
-    color: #e4e8ec;
-}
-
-.bot .caption-date,
-.bot .caption-address {
-    color: #6c757d;
-}
-
-/* 사용자 메시지 내 캡션 색상 (혹시 사용자가 이미지 첨부 시) */
-.user .caption-title {
+/* 사용자 말풍선 */
+.chat-message.user .message-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-bottom-right-radius: 4px;
 }
 
-.user .caption-date,
-.user .caption-address {
-    color: rgba(255, 255, 255, 0.9);
+/* 봇 말풍선 */
+.chat-message.bot .message-text {
+    background: linear-gradient(135deg, #e8d5ff 0%, #f3e7ff 100%);
+    color: #1a0a2e;
+    border: 2px solid rgba(138, 43, 226, 0.3);
+    border-bottom-left-radius: 4px;
 }
 
 /* 타임스탬프 */
 .message-timestamp {
-    font-size: 11px;
-    color: #adb5bd;
-    margin-top: 6px;
+    font-size: 12px; /* 11px → 12px */
+    color: rgba(232, 213, 255, 0.7);
+    margin-top: 8px; /* 6px → 8px */
+    opacity: 0.7;
+}
+
+.chat-message.user .message-timestamp {
     text-align: right;
 }
 
-/* 에러 메시지 */
-.chat-message.error .message-text {
-    color: #ff6b6b;
-    font-weight: 500;
+.chat-message.bot .message-timestamp {
+    text-align: left;
+}
+
+/* ============================================
+   🎯 이미지 컨테이너 - 말풍선 아래로 분리
+   ============================================ */
+
+.message-images-below {
+    margin-top: 15px;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    max-width: 100%; /* 전체 너비 사용 */
+}
+
+.chat-message.user .message-images-below {
+    justify-content: flex-end;
+}
+
+.chat-message.bot .message-images-below {
+    justify-content: flex-start;
+}
+
+.image-wrapper-below {
+    width: 300px; /* 크기 조정 */
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid rgba(232, 213, 255, 0.5);
+    background: rgba(255, 255, 255, 0.95);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(233, 232, 232, 0.3);
+}
+
+.image-wrapper-below:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(215, 212, 218, 0.767);
+    border-color: rgba(138, 43, 226, 0.7);
+}
+
+.content-image-below {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+.image-caption-below {
+    padding: 14px 16px; /* 12px 15px → 14px 16px */
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+}
+
+.caption-title-below {
+    font-weight: 600;
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 8px; /* 6px → 8px */
+    font-size: 16px; /* 14px → 16px */
+}
+
+.caption-date-below,
+.caption-address-below {
+    font-size: 14px; /* 12px → 14px */
+    color: #7f8c8d;
+    display: block;
+    margin-top: 4px;
 }
 
 /* 반응형 */
 @media (max-width: 768px) {
-    .content-image {
-        max-width: 100%;
-    }
-    
     .message-text {
-        font-size: 14px;
+        max-width: 85%;
+        padding: 16px 20px;
+        font-size: 16px; /* 모바일에서도 크게 */
     }
-    
-    .caption-title {
-        font-size: 13px;
+
+    .image-wrapper-below {
+        width: 100%;
+        max-width: 300px;
     }
-    
-    .caption-date,
-    .caption-address {
-        font-size: 12px;
+
+    .message-images-below {
+        width: 100%;
     }
 }
-
-/* 로딩 애니메이션 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.chat-message {
-    animation: fadeIn 0.3s ease-out;
-}
-
-/* 
-  기존 스타일 참고:
-  - .chat-message.user: 사용자 메시지 (오른쪽 정렬)
-  - .chat-message.bot: 봇 메시지 (왼쪽 정렬)
-  
-  위 스타일은 기존 Chat.css와 병합하세요.
-*/

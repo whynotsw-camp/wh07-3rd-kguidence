@@ -8,15 +8,72 @@ function KDH_ChatbotPage() {
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef(null);
 
+    // 🎭 Demon Hunters 전설의 장소들
+    const legendaryLocations = [
+        {
+            id: 1,
+            name: "남산타워",
+            nameEn: "Namsan Tower",
+            emoji: "🌙",
+            image: "https://img.news-wa.com/img/upload/2025/03/07/NWC_20250307114252.jpg.webp",
+            tooltip: "Our ultimate watchtower! 'Light in Darkness' MV final battle location",
+            searchQuery: "Introduce Namsan Tower"
+        },
+        {
+            id: 2,
+            name: "홍대",
+            nameEn: "Hongdae",
+            emoji: "🔥",
+            image: "https://images.unsplash.com/photo-1517154421773-0529f29ea451?w=400&h=300&fit=crop",
+            tooltip: "Where Shadow and Lumi street performed before debut!",
+            searchQuery: "Tell me about Hongdae"
+        },
+        {
+            id: 3,
+            name: "한강",
+            nameEn: "Han River",
+            emoji: "💫",
+            image: "https://love.seoul.go.kr/tmda/Pds/Board/seoul_news_write/Editor/article_202212_07_01.jpg",
+            tooltip: "'Moonlight Hunter' performance filming location!",
+            searchQuery: "Introduce Han River"
+        },
+        {
+            id: 4,
+            name: "강남",
+            nameEn: "Gangnam",
+            emoji: "⚔️",
+            image: "https://visitgangnam.net/wp-content/uploads/2024/06/GLIGHT3-scaled-uai-1920x1080.jpg",
+            tooltip: "'Neon Demons' choreography video location!",
+            searchQuery: "Tell me about Gangnam"
+        },
+        {
+            id: 5,
+            name: "경복궁",
+            nameEn: "Gyeongbokgung",
+            emoji: "👑",
+            image: "https://english.visitseoul.net/comm/getImage?srvcId=MEDIA&parentSn=65749&fileTy=MEDIA&fileNo=4&thumbTy=L%20|%20https://english.visitseoul.net/comm/getImage?srvcId=MEDIA&parentSn=65750&fileTy=MEDIA&fileNo=5&thumbTy=L%20|%20https://english.visitseoul.net/comm/getImage?srvcId=MEDIA&parentSn=65751&fileTy=MEDIA&fileNo=4&thumbTy=L%20|%20https://english.visitseoul.net/comm/getImage?srvcId=MEDIA&parentSn=67732&fileTy=MEDIA&fileNo=3&thumbTy=L%20|%20https://english.visitseoul.net/comm/getImage?srvcId=MEDIA&parentSn=67733&fileTy=MEDIA&fileNo=1&thumbTy=L",
+            tooltip: "Ancient palace where light warriors protected the kingdom!",
+            searchQuery: "Introduce Gyeongbokgung Palace"
+        },
+        {
+            id: 6,
+            name: "명동",
+            nameEn: "Myeongdong",
+            emoji: "✨",
+            image: "https://kride.blog/wp-content/uploads/2025/09/1750615211_youloveit_com_kpop_demon_hunters_saja-boys.jpg?w=870",
+            tooltip: "'Crystal Light' MV shopping district!",
+            searchQuery: "Tell me about Myeongdong"
+        }
+    ];
+
+    // 장소 카드 클릭 핸들러
+    const handleLocationClick = (location) => {
+        handleSendMessage(location.searchQuery);
+    };
+
     useEffect(() => {
-        setMessages([
-            {
-                id: 1,
-                text: 'Enjoy your trip to Korea with k-guidance!',
-                isUser: false,
-                timestamp: new Date()
-            }
-        ]);
+        // 초기에는 메시지 없음 (Welcome 화면 표시)
+        setMessages([]);
     }, []);
 
     useEffect(() => {
@@ -93,7 +150,6 @@ function KDH_ChatbotPage() {
                             switch (data.type) {
                                 case 'searching':
                                 case 'random':
-                                    // 검색 중 상태
                                     setMessages(prev => prev.map(msg => 
                                         msg.id === aiMessageId 
                                             ? { ...msg, status: data.message }
@@ -102,7 +158,6 @@ function KDH_ChatbotPage() {
                                     break;
 
                                 case 'found':
-                                    // 결과 찾음
                                     setMessages(prev => prev.map(msg => 
                                         msg.id === aiMessageId 
                                             ? { 
@@ -115,7 +170,6 @@ function KDH_ChatbotPage() {
                                     break;
 
                                 case 'generating':
-                                    // 응답 생성 중
                                     setMessages(prev => prev.map(msg => 
                                         msg.id === aiMessageId 
                                             ? { ...msg, status: data.message }
@@ -124,7 +178,6 @@ function KDH_ChatbotPage() {
                                     break;
 
                                 case 'chunk':
-                                    // 🌊 실시간 텍스트 청크!
                                     setMessages(prev => prev.map(msg => 
                                         msg.id === aiMessageId 
                                             ? { 
@@ -137,7 +190,6 @@ function KDH_ChatbotPage() {
                                     break;
 
                                 case 'done':
-                                    // ✅ 완료!
                                     setMessages(prev => prev.map(msg => 
                                         msg.id === aiMessageId 
                                             ? { 
@@ -155,7 +207,6 @@ function KDH_ChatbotPage() {
                                     ));
                                     setLoading(false);
 
-                                    // 🎯 지도 마커 추가
                                     if (data.map_markers && data.map_markers.length > 0) {
                                         if (window.addMapMarkers) {
                                             window.addMapMarkers(data.map_markers);
@@ -173,7 +224,6 @@ function KDH_ChatbotPage() {
                                     break;
 
                                 case 'error':
-                                    // ❌ 에러
                                     setMessages(prev => prev.map(msg => 
                                         msg.id === aiMessageId 
                                             ? { 
@@ -239,6 +289,64 @@ function KDH_ChatbotPage() {
                 </header>
 
                 <section className="kdh-message-area">
+                    {/* 🎭 Welcome Screen (메시지 없을 때만 표시) */}
+                    {messages.length === 0 && (
+                        <div className="demon-hunters-welcome">
+                            <div className="welcome-header">
+                                <h2 className="welcome-title">
+                                    <span className="title-emoji">🌙</span>
+                                    Explore Seoul with Demon Hunters!
+                                    <span className="title-emoji">⚔️</span>
+                                </h2>
+                                <p className="welcome-subtitle">
+                                    Click on any legendary location to discover Lumi's story! 💫
+                                </p>
+                            </div>
+
+                            <div className="locations-grid">
+                                {legendaryLocations.map((location) => (
+                                    <div
+                                        key={location.id}
+                                        className="location-card"
+                                        onClick={() => handleLocationClick(location)}
+                                        title={location.tooltip}
+                                    >
+                                        {/* 이미지 배경 */}
+                                        <div 
+                                            className="location-image"
+                                            style={{ 
+                                                backgroundImage: `url(${location.image})`,
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: 'center'
+                                            }}
+                                        />
+                                        
+                                        {/* 오버레이 */}
+                                        <div className="location-overlay" />
+
+                                        {/* 컨텐츠 */}
+                                        <div className="location-content">
+                                            <div className="location-emoji">{location.emoji}</div>
+                                            <div className="location-name">{location.name}</div>
+                                            <div className="location-name-en">{location.nameEn}</div>
+                                        </div>
+
+                                        {/* 호버 효과 */}
+                                        <div className="location-hover">
+                                            <p className="hover-text">{location.tooltip}</p>
+                                            <span className="hover-cta">Click to explore! 🔍</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="welcome-footer">
+                                <p>Or type your own location below! 🎤</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 기존 메시지 표시 */}
                     {messages.map((message) => (
                         <ChatMessage 
                             key={message.id} 
