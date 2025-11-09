@@ -1,51 +1,343 @@
-import React from "react";
+// src/components/KMedia/KMediaDescription.jsx
+// ✅ ScheduleTable과 동일한 인증 로직 사용
+
+import React, { useRef, useState, useEffect, useCallback } from "react"; 
 import "./KMediaDescription.css";
+import PlaceholderMarker from '../../assets/concert_marker.png';
+
+const NAVER_MAPS_CLIENT_ID = process.env.REACT_APP_NAVER_MAPS_CLIENT_ID;
+const NAVER_MAPS_URL = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_MAPS_CLIENT_ID}`;
+
+// ✅ ScheduleTable과 동일한 인증 함수 (복사)
+const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthError) => {
+    setAuthError(null);
+    if (!token) {
+        const error = new Error("세션이 없습니다. 로그인해주세요");
+        setAuthError(error.message);
+        throw error;
+    }
+    const headers = {
+        ...options.headers,
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+    try {
+        const response = await fetch(url, { ...options, headers });
+        if (response.status === 401) {
+            const error = new Error('로그인이 만료되었습니다. 다시 로그인해주세요.');
+            setAuthError(error.message);
+            localStorage.removeItem('session_id');
+            setToken(null);
+            setTimeout(() => { window.location.href = '/'; }, 2000);
+            throw error;
+        }
+        if (!response.ok) {
+            const errorDetail = await response.json().catch(() => ({}));
+            const errorMessage = errorDetail.detail || `API 요청 실패: ${response.status} ${response.statusText}`;
+            throw new Error(errorMessage);
+        }
+        return response;
+    } catch (error) {
+        console.error("❌ fetch 실패:", error);
+        throw error;
+    }
+};
 
 export default function KMediaDescription({ item, onClose, onAddLocation }) {
-  if (!item) return null;
+    
+    const mapElement = useRef(null);
+    const [mapReady, setMapReady] = useState(false);
+    
+    // 🆕 ScheduleTable과 동일한 인증 state
+    const [token, setToken] = useState(localStorage.getItem('session_id'));
+    const [authError, setAuthError] = useState(null);
+    
+    // 🆕 일정 선택 팝업 관련 state
+    const [showSchedulePopup, setShowSchedulePopup] = useState(false);
+    const [schedules, setSchedules] = useState([]);
+    const [selectedSchedule, setSelectedSchedule] = useState(null);
+    const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+    const [scheduleError, setScheduleError] = useState(null);
+    
+    const lat = item?.latitude;
+    const lng = item?.longitude; 
+    
+    const itemLocation =
+        (lat && lng)
+            ? { lat: parseFloat(lat), lng: parseFloat(lng) } 
+            : null;
 
-  return (
-    <div className="kmedia-desc-overlay" onClick={onClose}>
-      <div className="kmedia-desc-popup" onClick={(e) => e.stopPropagation()}>
+    // ✅ ScheduleTable과 동일한 fetchWithAuth 생성
+    const fetchWithAuth = useCallback((url, options = {}) =>
+        globalFetchWithAuth(url, options, token, setToken, setAuthError),
+    [token]);
 
-        {/* 닫기 버튼 */}
-        <button className="desc-close-btn" onClick={onClose}>✕</button>
+    // ✅ 1단계: API script 로드
+    useEffect(() => {
+        if (!NAVER_MAPS_CLIENT_ID) return;
 
-        {/* 장소 이미지 */}
-        <img 
-          src={item.thumbnail} 
-          alt={item.title} 
-          className="desc-img" 
-        />
+        const checkReady = () => {
+            if (window.naver?.maps) {
+                setMapReady(true);
+            } else {
+                setTimeout(checkReady, 100);
+            }
+        };
 
-        {/* 장소 이름 */}
-        <h2 className="desc-title">{item.title}</h2>
+        if (!document.getElementById("naver-map-script")) {
+            const script = document.createElement("script");
+            script.src = NAVER_MAPS_URL;
+            script.async = true;
+            script.id = "naver-map-script";
+            script.onload = checkReady;
+            document.head.appendChild(script);
+        } else {
+            checkReady();
+        }
+    }, []);
 
-        {/* 장소 설명 */}
-        <p className="desc-description">{item.description}</p>
+    // ✅ 2단계: 지도 & 커스텀 마커 렌더링
+    useEffect(() => {
+        if (!mapReady || !mapElement.current || !itemLocation) return;
 
-        {/* 지도 */}
-        <div className="desc-map">
-          <iframe
-            title="location-map"
-            width="100%"
-            height="100%"
-            style={{ border: 0, borderRadius: "12px" }}
-            loading="lazy"
-            allowFullScreen
-            src={`https://www.google.com/maps?q=${item.lat},${item.lng}&z=16&output=embed`}
-          ></iframe>
-        </div>
+        const naver = window.naver;
+        const mapCenter = new naver.maps.LatLng(itemLocation.lat, itemLocation.lng);
 
-        {/* ✅ 장소 추가 버튼 */}
-        <button 
-          className="desc-add-btn"
-          onClick={() => onAddLocation(item)}  
-        >
-          ➕ 장소 추가하기
-        </button>
+        const map = new naver.maps.Map(mapElement.current, {
+            center: mapCenter,
+            zoom: 15,
+            scaleControl: true,
+        });
 
-      </div>
-    </div>
-  );
+        new naver.maps.Marker({
+            position: mapCenter,
+            map: map,
+            icon: {
+                url: PlaceholderMarker,
+                size: new naver.maps.Size(47, 50),
+                scaledSize: new naver.maps.Size(38, 45),
+                anchor: new naver.maps.Point(20, 40),
+            },
+            title: item.title,
+        });
+
+    }, [mapReady, itemLocation, item?.title]);
+    
+    // 🆕 일정 목록 가져오기 - ScheduleTable 방식 사용
+    const fetchSchedules = async () => {
+        setIsLoadingSchedules(true);
+        setScheduleError(null);
+        
+        console.log('🔍 fetchSchedules - token 확인:', token ? '존재함' : '없음');
+        
+        if (!token) {
+            setScheduleError('로그인이 필요합니다.');
+            setIsLoadingSchedules(false);
+            return;
+        }
+        
+        try {
+            const response = await fetchWithAuth('http://localhost:8000/api/schedules/day_titles');
+            const data = await response.json();
+            
+            console.log('✅ 일정 목록 조회 성공:', data);
+            setSchedules(data);
+            
+        } catch (error) {
+            console.error('❌ 일정 목록 조회 실패:', error);
+            setScheduleError(error.message);
+        } finally {
+            setIsLoadingSchedules(false);
+        }
+    };
+    
+    // 🆕 "Add Place to Schedule" 버튼 클릭 핸들러
+    const handleAddPlaceClick = () => {
+        console.log("🔍 KMediaDescription이 받은 item:", item);
+        console.log('🔍 handleAddPlaceClick 호출됨');
+        console.log('🔍 showSchedulePopup 변경 전:', showSchedulePopup);
+        setShowSchedulePopup(true);
+        console.log('🔍 showSchedulePopup 변경 후 (비동기):', showSchedulePopup);
+        fetchSchedules();
+    };
+    
+    // 🆕 일정 선택 핸들러
+    const handleScheduleSelect = (schedule) => {
+        setSelectedSchedule(schedule);
+    };
+    
+    // 🆕 일정에 목적지 추가 확정
+    const handleConfirmAddToSchedule = async () => {
+        if (!selectedSchedule) {
+            alert('일정을 선택해주세요.');
+            return;
+        }
+        
+        // 부모 컴포넌트로 전달
+        if (onAddLocation) {
+            await onAddLocation(item, selectedSchedule.day_title);
+        }
+        
+        // 팝업 닫기
+        setShowSchedulePopup(false);
+        setSelectedSchedule(null);
+        
+        alert(`"${item.title}"이(가) "${selectedSchedule.day_title}"에 추가되었습니다! 🎉`);
+    };
+    
+    // 🆕 일정 선택 팝업 닫기
+    const handleCloseSchedulePopup = () => {
+        setShowSchedulePopup(false);
+        setSelectedSchedule(null);
+        setScheduleError(null);
+    };
+    
+    if (!item) return null;
+
+    // 이미지 배열 생성
+    let images = [];
+    if (item.image_second) {
+        images.push(item.image_second);
+        if (item.image_third) {
+            images.push(item.image_third);
+        }
+    } else {
+        if (item.thumbnail) images.push(item.thumbnail);
+    }
+
+    const imageContainerClass =
+        images.length === 1 ? "desc-image-container single-image" : "desc-image-container multi-image";
+
+    return (
+        <>
+            <div className="kmedia-desc-overlay" onClick={onClose}>
+                <div className="kmedia-desc-popup" onClick={(e) => e.stopPropagation()}>
+
+                    <button className="desc-close-btn" onClick={onClose}>✕</button>
+
+                    <div className={imageContainerClass}>
+                        {images.map((imgSrc, idx) => (
+                            <img
+                                key={idx}
+                                src={imgSrc}
+                                alt={`${item.title} 이미지 ${idx + 1}`}
+                                className="desc-img"
+                            />
+                        ))}
+                    </div>
+
+                    <h2 className="desc-title-en">{item.title_en || item.title}</h2>
+                    <h3 className="desc-title-ko">{item.title_ko || item.title}</h3>
+
+                    <p className="desc-description">{item.description} ⭐</p>
+
+                    <div className="desc-map">
+                        <div
+                            ref={mapElement}
+                            className="map-container"
+                            style={{ width: "100%", height: "100%" }} 
+                        >
+                            {!mapReady && (
+                                <p style={{ textAlign: "center", paddingTop: "50px" }}>
+                                    Loading Map API...
+                                </p>
+                            )}
+                            {mapReady && !itemLocation && (
+                                <p style={{ textAlign: "center", paddingTop: "50px", color: "red" }}>
+                                    Error: 위치 좌표 정보를 불러올 수 없습니다.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+
+                    <button 
+                        className="desc-add-btn"
+                        onClick={handleAddPlaceClick}
+                    >
+                        Add Place to Schedule 💛
+                    </button>
+
+                </div>
+            </div>
+            
+            {/* 🆕 일정 선택 팝업 */}
+            {showSchedulePopup && (
+                <div className="schedule-select-overlay" onClick={handleCloseSchedulePopup}>
+                    <div className="schedule-select-popup" onClick={(e) => e.stopPropagation()}>
+                        
+                        <button className="schedule-close-btn" onClick={handleCloseSchedulePopup}>✕</button>
+                        
+                        <h2 className="schedule-popup-title">📅 일정 선택</h2>
+                        <p className="schedule-popup-subtitle">
+                            "{item.title}"을(를) 추가할 일정을 선택하세요
+                        </p>
+                        
+                        {authError && (
+                            <div className="schedule-error">
+                                <p>❌ {authError}</p>
+                            </div>
+                        )}
+                        
+                        {isLoadingSchedules && (
+                            <div className="schedule-loading">
+                                <p>⏳ 일정 목록을 불러오는 중...</p>
+                            </div>
+                        )}
+                        
+                        {scheduleError && !authError && (
+                            <div className="schedule-error">
+                                <p>❌ {scheduleError}</p>
+                            </div>
+                        )}
+                        
+                        {!isLoadingSchedules && !scheduleError && !authError && schedules.length === 0 && (
+                            <div className="schedule-empty">
+                                <p>등록된 일정이 없습니다.</p>
+                                <p>먼저 일정을 생성해주세요.</p>
+                            </div>
+                        )}
+                        
+                        {!isLoadingSchedules && !scheduleError && !authError && schedules.length > 0 && (
+                            <div className="schedule-list">
+                                {schedules.map((schedule) => (
+                                    <div
+                                        key={schedule.day_title}
+                                        className={`schedule-item ${selectedSchedule?.day_title === schedule.day_title ? 'selected' : ''}`}
+                                        onClick={() => handleScheduleSelect(schedule)}
+                                    >
+                                        <div className="schedule-item-icon">
+                                            {selectedSchedule?.day_title === schedule.day_title ? '✅' : '📅'}
+                                        </div>
+                                        <div className="schedule-item-content">
+                                            <h3 className="schedule-item-title">{schedule.day_title}</h3>
+                                            {schedule.description && (
+                                                <p className="schedule-item-description">{schedule.description}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        
+                        <div className="schedule-popup-actions">
+                            <button 
+                                className="schedule-cancel-btn"
+                                onClick={handleCloseSchedulePopup}
+                            >
+                                취소
+                            </button>
+                            <button 
+                                className="schedule-confirm-btn"
+                                onClick={handleConfirmAddToSchedule}
+                                disabled={!selectedSchedule}
+                            >
+                                선택 완료
+                            </button>
+                        </div>
+                        
+                    </div>
+                </div>
+            )}
+        </>
+    );
 }

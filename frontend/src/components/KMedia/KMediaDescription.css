@@ -2,7 +2,7 @@
 .kmedia-desc-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -13,13 +13,16 @@
 /* 팝업 박스 */
 .kmedia-desc-popup {
   background: #ffffff;
-  width: 90%;
-  max-width: 600px;
+  width: 100%;
+  max-width: 750px;
   border-radius: 16px;
   padding: 20px;
   text-align: center;
   position: relative;
   animation: popupFadeUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* 닫기 버튼 */
@@ -37,13 +40,19 @@
   opacity: 1;
 }
 
-/* 이미지 */
+/* 이미지 컨테이너: 최대 2장 표시, 가로 정렬 */
+.desc-image-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* 이미지 개별 스타일 */
 .desc-img {
-  width: 100%;
+  width: calc(50% - 5px); /* 2장일 경우 양쪽 공간 확보 */
   max-height: 260px;
   border-radius: 12px;
   object-fit: cover;
-  margin-bottom: 15px;
 }
 
 /* 제목 */
@@ -59,14 +68,31 @@
   font-size: 1rem;
   color: #444;
   margin-bottom: 15px;
+  text-align: center;
 }
 
 /* 지도 */
 .desc-map {
   width: 100%;
-  height: 250px;
-  border-radius: 12px;
+  height: 260px;
+  border-radius: 10px;
   overflow: hidden;
+  margin-bottom: 0px;
+}
+
+/* 장소 추가 버튼 */
+.desc-add-btn {
+  background-color: #ff9100;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.desc-add-btn:hover {
+  background-color: #005fcc;
 }
 
 /* 팝업 등장 애니메이션 */
@@ -79,4 +105,401 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* 이미지 컨테이너 */
+.desc-image-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+/* 한 장일 때 */
+.desc-image-container.single-image .desc-img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* 두 장일 때 */
+.desc-image-container.multi-image .desc-img {
+  width: 50%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* 영어 제목 */
+.desc-title-en {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: black;
+}
+
+/* 한국어 제목 */
+.desc-title-ko {
+  font-size: 1.0rem;
+  font-weight: 500;
+  color: #555;
+}
+
+
+/* 기존 스타일 (유지) */
+.kmedia-desc-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.kmedia-desc-popup {
+    background: white;
+    border-radius: 16px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 30px;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.desc-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s;
+}
+
+.desc-close-btn:hover {
+    color: #000;
+}
+
+.desc-image-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.desc-image-container.single-image {
+    justify-content: center;
+}
+
+.desc-image-container.multi-image {
+    justify-content: space-between;
+}
+
+.desc-img {
+    width: 100%;
+    max-width: 340px;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.desc-image-container.single-image .desc-img {
+    max-width: 100%;
+    height: 300px;
+}
+
+.desc-title-en {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.desc-title-ko {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    color: #666;
+}
+
+.desc-description {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+.desc-map {
+    width: 100%;
+    height: 250px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+}
+
+.map-container {
+    width: 100%;
+    height: 100%;
+}
+
+.desc-add-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.desc-add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 215, 0, 0.4);
+}
+
+/* 🆕 일정 선택 팝업 스타일 */
+.schedule-select-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000; /* 🔧 z-index 대폭 증가 */
+    animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.schedule-select-popup {
+    background: white;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 30px;
+    position: relative;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
+    animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.schedule-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #666;
+    transition: color 0.2s;
+    z-index: 10;
+}
+
+.schedule-close-btn:hover {
+    color: #000;
+}
+
+.schedule-popup-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.schedule-popup-subtitle {
+    font-size: 14px;
+    color: #666;
+    text-align: center;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.schedule-loading,
+.schedule-error,
+.schedule-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.schedule-error {
+    color: #e74c3c;
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: white;
+}
+
+.schedule-item:hover {
+    border-color: #ffd700;
+    background: #fffbf0;
+    transform: translateX(4px);
+}
+
+.schedule-item.selected {
+    border-color: #ffd700;
+    background: linear-gradient(135deg, #fff9e6, #fffef0);
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+}
+
+.schedule-item-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+}
+
+.schedule-item-content {
+    flex: 1;
+}
+
+.schedule-item-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.schedule-item-description {
+    font-size: 13px;
+    color: #777;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.schedule-popup-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.schedule-cancel-btn,
+.schedule-confirm-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.schedule-cancel-btn {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.schedule-cancel-btn:hover {
+    background: #e0e0e0;
+}
+
+.schedule-confirm-btn {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.schedule-confirm-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(255, 215, 0, 0.4);
+}
+
+.schedule-confirm-btn:disabled {
+    background: #ddd;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* 스크롤바 스타일링 */
+.schedule-select-popup::-webkit-scrollbar,
+.schedule-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.schedule-select-popup::-webkit-scrollbar-track,
+.schedule-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.schedule-select-popup::-webkit-scrollbar-thumb,
+.schedule-list::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.schedule-select-popup::-webkit-scrollbar-thumb:hover,
+.schedule-list::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 600px) {
+    .schedule-select-popup {
+        padding: 20px;
+    }
+    
+    .schedule-popup-title {
+        font-size: 20px;
+    }
+    
+    .schedule-item {
+        padding: 12px;
+    }
+    
+    .schedule-item-icon {
+        font-size: 24px;
+    }
 }

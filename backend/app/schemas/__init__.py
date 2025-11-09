@@ -8,7 +8,7 @@ from .user_schema import (
     TokenData
 )
 
-# Destination 스키마들  
+# Destination 스키마들  
 from .destination_schema import (
     DestinationBase,
     DestinationCreate,
@@ -48,12 +48,20 @@ from .concert_schema import (
 )
 
 from .schedule_schema import ScheduleEdit, ScheduleResponse
+
+# KContent 스키마들 <- 새로 추가
+from .kcontent_schema import (
+    KContentCreate,
+    KContentEdit,
+    KContentResponse
+)
+
 __all__ = [
     # User
     "UserBase", "UserCreate", "UserResponse", 
     "UserLogin", "Token", "TokenData",
     
-    # Destination  
+    # Destination  
     "DestinationBase", "DestinationCreate",
     "DestinationResponse", "DestinationFromConversation",
     "DestinationAddRequest", "DestinationAddResponse",
@@ -69,44 +77,11 @@ __all__ = [
 
     
     # Festival
-    "FestivalBase", "FestivalResponse", "FestivalCard", "MapMarker"
+    "FestivalBase", "FestivalResponse", "FestivalCard", "MapMarker",
     
-     # Schedule
-    "ScheduleEdit", "ScheduleResponse"
+    # Schedule
+    "ScheduleEdit", "ScheduleResponse",
+
+    # KContent <- 새로 추가
+    "KContentCreate", "KContentEdit", "KContentResponse"
 ]
-
-################################################
-# 아래는 현재 사용하지 않는 스키마들 (주석 처리됨)
-
-# # User 스키마들 (미사용)
-# from .user_schema import (
-#     UserUpdate,
-#     UserSummary
-# )
-
-# # Destination 스키마들 (미사용)
-# from .destination_schema import (
-#     DestinationUpdate, 
-#     DestinationSummary,
-#     UserDestinationsResponse,
-#     DestinationCreateExtended
-# )
-
-# # Conversation 스키마들 (미사용)
-# from .conversation_schema import (
-#     ConversationUpdate,
-#     ConversationSummary,
-#     UserConversationsResponse,
-#     ConversationHistory
-# )
-
-# # Festival 스키마들 (미사용)
-# from .festival_schema import (
-#     FestivalCreate,
-#     FestivalUpdate,
-#     FestivalSummary,
-#     FestivalsResponse,
-#     OngoingFestivalsResponse,
-#     FestivalSearch,
-#     FestivalDateRange
-# )

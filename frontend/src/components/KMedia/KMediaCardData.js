@@ -1,25 +1,79 @@
-export const mediaMockData = [
-  {
-    id: 1,
-    title: "도깨비",
-    location: "삼청동 길거리",
-    thumbnail:"https://tong.visitkorea.or.kr/cms/resource/82/3498982_image2_1.jpg",
-    image:"https://blog.kakaocdn.net/dna/dLvkbQ/btsJgJ1xYvc/AAAAAAAAAAAAAAAAAAAAAHOCGfqUgF66IJ19QMVo6O57cm3z0OlhUgmEWqsM3IVW/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1764514799&allow_ip=&allow_referer=&signature=pARk7Fy19vQZNViMBct4onD8v1w%3D",
-    description:'불멸의 삶을 끝내기 위해 인간 신부가 필요한 도깨비, 기억상실증 저승사자, 그리고 "도깨비 신부"를 자처하는 소녀가 얽히며 벌어지는 신비로운 낭만 이야기입니다',
-    liked: false,
-  },
-  {
-    id: 2,
-    title: "사랑의 불시착",
-    location: "남산타워",
-    image: "https://cphoto.asiae.co.kr/listimglink/1/2020012116032818509_1579590207.jpeg",
-    liked: false,
-  },
-  {
-    id: 3,
-    title: "태양의 후예",
-    location: "태백 한탄강 출렁다리",
-    image: "https://www.travelnbike.com/news/photo/201603/18234_17361_209.jpg",
-    liked: false,
+// KMediaCardData.js
+// FastAPI와 직접 연결, 이미지 프록시 없이 원본 URL 사용
+
+const BASE_URL = "http://localhost:8000/api";
+
+/**
+ * 공통 fetch 함수
+ * @param {string} url
+ * @returns {Promise<any>}
+ */
+async function fetchData(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      const errorDetail = await response.text();
+      throw new Error(`API Request Failed: ${response.status} - ${errorDetail}`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error("🌐 API 호출 오류:", error);
+    throw error;
   }
-];
+}
+
+/**
+ * 1️⃣ 전체 K-Content 목록 조회
+ * @param {number} skip
+ * @param {number} limit
+ * @returns {Promise<any[]>}
+ */
+export async function fetchKContentList(skip = 0, limit = 100) {
+  const url = `${BASE_URL}/kcontents?skip=${skip}&limit=${limit}`;
+  return fetchData(url);
+}
+
+/**
+ * 2️⃣ 특정 콘텐츠 상세 조회
+ * @param {number} contentId
+ * @returns {Promise<any>}
+ */
+export async function fetchKContentDetail(contentId) {
+  const url = `${BASE_URL}/kcontents/${contentId}`;
+  return fetchData(url);
+}
+
+/**
+ * 3️⃣ 검색 API
+ * @param {string} query
+ * @returns {Promise<any[]>}
+ */
+export async function fetchKContentSearch(query) {
+  if (!query || query.trim().length < 2) {
+    console.warn("검색어는 2글자 이상이어야 합니다.");
+    return [];
+  }
+  const url = `${BASE_URL}/kcontents/search/query?q=${encodeURIComponent(query)}`;
+  return fetchData(url);
+}
+
+/**
+ * 4️⃣ 카테고리 조회
+ * @param {string} category
+ * @returns {Promise<any[]>}
+ */
+export async function fetchKContentByCategory(category) {
+  if (!category) return [];
+  const url = `${BASE_URL}/kcontents/search/category?category=${encodeURIComponent(category)}`;
+  return fetchData(url);
+}
+
+/**
+ * 5️⃣ Helper: 리스트 안의 모든 이미지 URL 반환 (프록시 없이 원본 URL)
+ * @param {string[]} urls
+ * @returns {string[]} 원본 URL 배열
+ */
+export function getImageList(urls) {
+  if (!urls || !Array.isArray(urls)) return [];
+  return urls;
+}

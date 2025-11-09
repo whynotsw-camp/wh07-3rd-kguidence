@@ -1,5 +1,6 @@
 import React from "react";
 import "./KMediaCard.css";
+import { AiFillHeart, AiOutlineHeart } from 'react-icons/ai';
 
 export default function KMediaCard({ item, onLikeToggle, onCardClick }) {
   const handleLikeClick = (e) => {
@@ -9,15 +10,21 @@ export default function KMediaCard({ item, onLikeToggle, onCardClick }) {
 
   return (
     <div className="kmedia-card" onClick={() => onCardClick(item.id)}>
-      <img src={item.image} alt={item.title} className="kmedia-image" />
-      <h3 className="kmedia-title">{item.title}</h3>
-      <p className="kmedia-location">{item.location}</p>
+      {/* 썸네일 표시 */}
+      <img
+        src={item.thumbnail || "/placeholder.png"} // 썸네일 없으면 대체 이미지
+        alt={item.title}
+        className="kmedia-image"
+      /> 
+      <h3 className="kmedia-title_en">{item.title_en}</h3>
+      <h3 className="kmedia-location">{item.location}</h3>
+      <p className="kmedia-title_ko">{item.title_ko}</p>
 
       <button
         className={`kmedia-like-btn ${item.liked ? "liked" : ""}`}
         onClick={handleLikeClick}
       >
-        {item.liked ? "❤️" : "🤍"}
+        {item.liked ? <AiFillHeart style={{ color: 'red' }} /> : <AiOutlineHeart />}
       </button>
     </div>
   );
