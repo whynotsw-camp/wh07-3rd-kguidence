@@ -147,13 +147,6 @@
     height: 200px; 
 }
 
-/* 이미지 스타일은 기존과 동일 */
-.kmedia-image {
-    width: 100%;
-    object-fit: cover;
-    /* border-radius는 wrapper로 이동했으므로 여기서 제거 */
-    border-radius: 0; 
-}
 
 /* 슬라이더 버튼 스타일 */
 .slider-btn {

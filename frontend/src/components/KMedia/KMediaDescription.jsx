@@ -1,5 +1,5 @@
 // src/components/KMedia/KMediaDescription.jsx
-// ✅ ScheduleTable과 동일한 인증 로직 사용
+// ✅ ScheduleTable과 동일한 인증 로직 + 목적지 추가 API 호출
 
 import React, { useRef, useState, useEffect, useCallback } from "react"; 
 import "./KMediaDescription.css";
@@ -8,7 +8,7 @@ import PlaceholderMarker from '../../assets/concert_marker.png';
 const NAVER_MAPS_CLIENT_ID = process.env.REACT_APP_NAVER_MAPS_CLIENT_ID;
 const NAVER_MAPS_URL = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_MAPS_CLIENT_ID}`;
 
-// ✅ ScheduleTable과 동일한 인증 함수 (복사)
+// ✅ ScheduleTable과 동일한 인증 함수
 const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthError) => {
     setAuthError(null);
     if (!token) {
@@ -33,6 +33,8 @@ const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthEr
         }
         if (!response.ok) {
             const errorDetail = await response.json().catch(() => ({}));
+            console.error('🔍 API 에러 상세:', errorDetail);
+            console.error('🔍 HTTP 상태:', response.status);
             const errorMessage = errorDetail.detail || `API 요청 실패: ${response.status} ${response.statusText}`;
             throw new Error(errorMessage);
         }
@@ -123,7 +125,7 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
 
     }, [mapReady, itemLocation, item?.title]);
     
-    // 🆕 일정 목록 가져오기 - ScheduleTable 방식 사용
+    // 🆕 일정 목록 가져오기
     const fetchSchedules = async () => {
         setIsLoadingSchedules(true);
         setScheduleError(null);
@@ -155,9 +157,7 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
     const handleAddPlaceClick = () => {
         console.log("🔍 KMediaDescription이 받은 item:", item);
         console.log('🔍 handleAddPlaceClick 호출됨');
-        console.log('🔍 showSchedulePopup 변경 전:', showSchedulePopup);
         setShowSchedulePopup(true);
-        console.log('🔍 showSchedulePopup 변경 후 (비동기):', showSchedulePopup);
         fetchSchedules();
     };
     
@@ -166,23 +166,77 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
         setSelectedSchedule(schedule);
     };
     
-    // 🆕 일정에 목적지 추가 확정
+    // 🆕 일정에 목적지 추가 확정 - API 호출 포함!
     const handleConfirmAddToSchedule = async () => {
         if (!selectedSchedule) {
             alert('일정을 선택해주세요.');
             return;
         }
         
-        // 부모 컴포넌트로 전달
-        if (onAddLocation) {
-            await onAddLocation(item, selectedSchedule.day_title);
+        console.log('🔍 목적지 추가 시작:', {
+            schedule: selectedSchedule,
+            item: item
+        });
+        
+        // day_title에서 숫자 추출 (예: "1days" -> 1)
+        const dayNumber = parseInt(selectedSchedule.day_title.match(/\d+/)?.[0] || '1');
+        
+        try {
+            // 로딩 상태 표시
+            setIsLoadingSchedules(true);
+            
+            // 요청 데이터 구성
+            const requestData = {
+                day_number: dayNumber,
+                name: item.title || item.title_en || item.location,
+                place_type: 1, // 🎯 1 = 명소 (K-Content)
+                reference_id: item.id,
+                latitude: parseFloat(item.latitude) || null,
+                longitude: parseFloat(item.longitude) || null,
+                visit_order: null,
+                notes: item.description ? item.description.substring(0, 500) : null // 최대 500자 제한
+            };
+            
+            console.log('🔍 API 요청 데이터:', requestData);
+            console.log('🔍 각 필드 타입 확인:', {
+                day_number: typeof requestData.day_number,
+                name: typeof requestData.name,
+                place_type: typeof requestData.place_type,
+                reference_id: typeof requestData.reference_id,
+                latitude: typeof requestData.latitude,
+                longitude: typeof requestData.longitude,
+                visit_order: requestData.visit_order,
+                notes_length: requestData.notes?.length || 0
+            });
+            
+            // 🎯 실제 API 호출!
+            const response = await fetchWithAuth('http://localhost:8000/api/destinations/add', {
+                method: 'POST',
+                body: JSON.stringify(requestData)
+            });
+            
+            const result = await response.json();
+            
+            console.log('✅ 목적지 추가 API 성공:', result);
+            
+            // 팝업 닫기
+            setShowSchedulePopup(false);
+            setSelectedSchedule(null);
+            
+            // 성공 메시지
+            alert(result.message || `"${item.title}"이(가) "${selectedSchedule.day_title}"에 추가되었습니다! 🎉`);
+            
+            // 부모 컴포넌트의 onAddLocation 호출 (ScheduleTable 새로고침용)
+            if (onAddLocation) {
+                await onAddLocation(item, selectedSchedule.day_title);
+            }
+            
+        } catch (error) {
+            console.error('❌ 목적지 추가 실패:', error);
+            alert(`목적지 추가 실패: ${error.message}`);
+        } finally {
+            setIsLoadingSchedules(false);
         }
-        
-        // 팝업 닫기
-        setShowSchedulePopup(false);
-        setSelectedSchedule(null);
-        
-        alert(`"${item.title}"이(가) "${selectedSchedule.day_title}"에 추가되었습니다! 🎉`);
     };
     
     // 🆕 일정 선택 팝업 닫기
@@ -194,15 +248,23 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
     
     if (!item) return null;
 
-    // 이미지 배열 생성
+    // 🎨 이미지 배열 생성 로직 수정
     let images = [];
-    if (item.image_second) {
-        images.push(item.image_second);
-        if (item.image_third) {
-            images.push(item.image_third);
+    
+    // 이미지가 1개만 있는 경우: thumbnail만 표시
+    if (!item.image_second && !item.image_third) {
+        if (item.thumbnail) {
+            images.push(item.thumbnail);
         }
-    } else {
-        if (item.thumbnail) images.push(item.thumbnail);
+    }
+    // 이미지가 2개 있는 경우: image_second만 표시
+    else if (item.image_second && !item.image_third) {
+        images.push(item.image_second);
+    }
+    // 이미지가 3개 있는 경우: image_second + image_third (2장)
+    else if (item.image_second && item.image_third) {
+        images.push(item.image_second);
+        images.push(item.image_third);
     }
 
     const imageContainerClass =
@@ -329,9 +391,9 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
                             <button 
                                 className="schedule-confirm-btn"
                                 onClick={handleConfirmAddToSchedule}
-                                disabled={!selectedSchedule}
+                                disabled={!selectedSchedule || isLoadingSchedules}
                             >
-                                선택 완료
+                                {isLoadingSchedules ? '추가 중...' : '선택 완료'}
                             </button>
                         </div>
                         

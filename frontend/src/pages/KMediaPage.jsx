@@ -227,13 +227,7 @@ function KMediaPage() {
 
             {selectedItem && (
                 <KMediaDescription
-                    item={{
-                        ...selectedItem,
-                        thumbnail: selectedItem.thumbnail,
-                        image_second: selectedItem.second_image || selectedItem.thumbnail,
-                        image_third: selectedItem.third_image || null,
-                        image: getImageList(selectedItem.image_url_list || [])
-                    }}
+                    item={selectedItem} // ✅ 백엔드에서 이미 올바른 형식으로 반환
                     onClose={handlePopupClose}
                     onAddLocation={handleAddLocation}
                 />
