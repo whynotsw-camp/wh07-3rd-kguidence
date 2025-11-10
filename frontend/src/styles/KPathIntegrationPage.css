@@ -114,7 +114,7 @@
     font-weight: 700;
     color: #ffffff;
     margin-bottom: 0.5rem;
-    
+    animation: fadeInUpKPath 1s ease-out forwards; 
     /* ✅ 항상 빛나도록 */
     text-shadow: 
         0 0 10px rgba(179, 234, 204, 0.8),

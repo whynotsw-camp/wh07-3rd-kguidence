@@ -27,7 +27,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
     const [isSelectingPath, setIsSelectingPath] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [message, setMessage] = useState('🔍 장소 검색(자동완성 지원) 또는 입력 후 검색 버튼을 사용하세요.');
+    const [message, setMessage] = useState('🔍 Search by location (with autocomplete) or enter a location and use the search button.');
     const [isDeleteMode, setIsDeleteMode] = useState(false);
 
     const [markerMemos, setMarkerMemos] = useState({}); 
@@ -59,7 +59,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
                 ));
                 
                 setModalContent(null);
-                setMessage(`📝 마커 '${newTitle}' 정보가 저장되었습니다.`);
+                setMessage(`📝 Marker'${newTitle}' information has been saved.`);
             },
             onClose: () => setModalContent(null)
         });
@@ -89,41 +89,37 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
     );
 
     // --- ⭐ 4. scheduleLocations 처리 (일정 선택 시 목적지 로드) ---
-    useEffect(() => {
-        if (!scheduleLocations || scheduleLocations.length === 0) {
-            // 목적지가 없으면 마커 초기화 (옵션)
-            // setUserMarkers([]);
-            // setMessage('📭 이 일정에는 아직 목적지가 없습니다.');
-            return;
-        }
+    // ✅ 일정 선택될 때마다 지도 마커를 즉시 재배치
+useEffect(() => {
+    if (!map) return;
 
-        console.log('📍 일정의 목적지들을 마커로 추가:', scheduleLocations);
-        
-        // ⭐ 기존 검색으로 추가한 마커는 유지하고 싶다면:
-        // setUserMarkers(prev => [...prev, ...scheduleLocations]);
-        
-        // ⭐ 일정의 목적지만 표시하고 싶다면 (권장):
-        setUserMarkers(scheduleLocations);
-        
-        setMessage(`📍 ${scheduleLocations.length} destinations loaded.`);
-        
-        // 첫 번째 목적지로 지도 중심 이동
-        if (map && scheduleLocations[0]) {
-            try {
-                const firstLocation = scheduleLocations[0];
-                map.setCenter(
-                    new window.naver.maps.LatLng(
-                        firstLocation.lat, 
-                        firstLocation.lng
-                    )
-                );
-                map.setZoom(13, true);
-                console.log(`🗺️ 지도 중심 이동: ${firstLocation.name}`);
-            } catch (e) {
-                console.warn('지도 중심 이동 실패', e);
-            }
-        }
-    }, [scheduleLocations, map]);
+    // 지도 마커 삭제
+    if (clearRoute) clearRoute();
+    if (mapObjectsRef.current) {
+        Object.values(mapObjectsRef.current).forEach(obj => obj.setMap(null));
+        mapObjectsRef.current = {};
+    }
+
+    if (!scheduleLocations || scheduleLocations.length === 0) {
+        setUserMarkers([]);
+        return;
+    }
+
+    // 마커 상태 업데이트
+    setUserMarkers([...scheduleLocations]);
+
+    // ✅ 상태 반영 후 마커 그리기 (핵심 추가)
+    setTimeout(() => {
+        setUserMarkers(scheduleLocations); // ✅ 이 한 줄이 핵심!!
+
+        // 중심 이동
+        const first = scheduleLocations[0];
+        map.setCenter(new window.naver.maps.LatLng(first.lat, first.lng));
+        map.setZoom(13);
+    }, 0);
+
+}, [scheduleLocations, map]);
+
 
     // --- 5. 통합 Ref 업데이트 (useEffect) ---
     useEffect(() => {
@@ -145,7 +141,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
     // --- 6. 경로 검색 함수 정의 ---
     const fetchRoute = useCallback(async (startLat, startLng, endLat, endLng) => {
         setIsLoading(true);
-        setMessage('🚌 대중교통 경로 검색 중...');
+        setMessage('🚌 Searching for public transportation routes...');
         setRouteResult(null);
 
         const requestBody = { startLat, startLng, endLat, endLng };
@@ -321,7 +317,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
                     console.warn('삭제 리스너 등록 실패', e);
                 }
             });
-            setMessage('🗑 삭제 모드 활성화 — 삭제하려면 마커를 클릭하세요.');
+            setMessage('🗑 Delete Mode Activated — Click the marker to delete.');
         } else {
             Object.keys(deleteListenersRef.current).forEach(key => {
                 try {
@@ -332,7 +328,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
                 } catch (e) { /* 무시 */ }
             });
             deleteListenersRef.current = {};
-            setMessage(prev => prev || '삭제 모드가 해제되었습니다.');
+            setMessage(prev => prev || 'Delete mode has been disabled..');
         }
 
         return () => {
@@ -354,7 +350,7 @@ function KPathIdeaPage({ scheduleLocation, scheduleLocations = [] }) {
         clearRoute();
 
         if (userMarkers.length < 2) {
-            setMessage('⚠️ 경로 생성을 시작하려면 지도에 최소 두 개 이상의 마커가 있어야 합니다.');
+            setMessage('⚠️  To start creating a route, you must have at least two markers on the map.');
             return;
         }
 

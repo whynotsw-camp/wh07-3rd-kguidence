@@ -11,7 +11,7 @@ RUN npm config set fetch-retry-maxtimeout 120000 && \
 
 # 기본 패키지 설치
 RUN npm install --loglevel verbose
-
+RUN npm install @hello-pangea/dnd --save
 
 # react-icons, react-calendar, MUI 관련 패키지 명시적 설치
 RUN npm install react-icons@^4.12.0 \
