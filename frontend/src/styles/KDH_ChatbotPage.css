@@ -26,7 +26,10 @@
 
 /* 메시지 영역 테두리 제거 */
 .kdh-message-area {
-    border: none !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 100px) !important;
+    padding-bottom: 150px !important; /* 푸터 높이 + 여유 공간 */
+    scroll-behavior: smooth;
 }
 
 /* 메인 컨테이너 테두리 제거 */
@@ -317,4 +320,69 @@ div[class*="location"] {
         flex-direction: column;
         gap: 10px;
     }
+}
+
+
+
+/* 채팅 입력창을 화면 최하단에 고정 */
+.chat-footer {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 50% !important;
+    background: #1e1e2e !important;
+    padding: 10px 20px !important; /* 타이트하게 */
+    z-index: 1000 !important;
+    border-top: 2px solid rgba(138, 43, 226, 0.3);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* SUGGEST ROUTES 여백 조정 */
+.chat-footer .suggested-routes {
+    margin-bottom: 8px !important;
+}
+
+.chat-footer .tags {
+    margin-bottom: 8px !important;
+}
+
+/* 입력창 컨테이너 */
+.input-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* 입력 필드 */
+.input-bar input {
+    flex: 1;
+    width: 100%;
+    padding: 12px 50px 12px 20px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 2px solid rgba(138, 43, 226, 0.3) !important;
+    border-radius: 25px !important;
+    color: white !important;
+    font-size: 15px !important;
+    outline: none;
+}
+
+.input-bar input:focus {
+    border-color: rgba(138, 43, 226, 0.6) !important;
+}
+
+/* 돋보기를 입력창 안으로 */
+.input-bar .search-icon {
+    position: absolute !important;
+    right: 15px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform 0.2s;
+}
+
+.input-bar .search-icon:hover {
+    transform: translateY(-50%) scale(1.2) !important;
 }

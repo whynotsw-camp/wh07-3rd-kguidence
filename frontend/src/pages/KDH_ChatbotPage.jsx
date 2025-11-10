@@ -17,16 +17,16 @@ function KDH_ChatbotPage() {
             emoji: "🌙",
             image: "https://img.news-wa.com/img/upload/2025/03/07/NWC_20250307114252.jpg.webp",
             tooltip: "Our ultimate watchtower! 'Light in Darkness' MV final battle location",
-            searchQuery: "Introduce Namsan Tower"
+            searchQuery: "Introduce Namsan Seoul Tower"
         },
         {
             id: 2,
-            name: "홍대",
-            nameEn: "Hongdae",
+            name: "북촌 한옥마을",
+            nameEn: "Bukchon",
             emoji: "🔥",
-            image: "https://images.unsplash.com/photo-1517154421773-0529f29ea451?w=400&h=300&fit=crop",
+            image: "https://english.visitseoul.net/comm/getImage?srvcId=MEDIA&parentSn=42685&fileTy=MEDIA&fileNo=2&thumbTy=L",
             tooltip: "Where Shadow and Lumi street performed before debut!",
-            searchQuery: "Tell me about Hongdae"
+            searchQuery: "Tell me about Bukchon"
         },
         {
             id: 3,
@@ -35,7 +35,7 @@ function KDH_ChatbotPage() {
             emoji: "💫",
             image: "https://love.seoul.go.kr/tmda/Pds/Board/seoul_news_write/Editor/article_202212_07_01.jpg",
             tooltip: "'Moonlight Hunter' performance filming location!",
-            searchQuery: "Introduce Han River"
+            searchQuery: "Introduce Hangang River Bus"
         },
         {
             id: 4,
@@ -44,7 +44,7 @@ function KDH_ChatbotPage() {
             emoji: "⚔️",
             image: "https://visitgangnam.net/wp-content/uploads/2024/06/GLIGHT3-scaled-uai-1920x1080.jpg",
             tooltip: "'Neon Demons' choreography video location!",
-            searchQuery: "Tell me about Gangnam"
+            searchQuery: "Tell me about COEX"
         },
         {
             id: 5,
@@ -290,7 +290,7 @@ function KDH_ChatbotPage() {
 
                 <section className="kdh-message-area">
                     {/* 🎭 Welcome Screen (메시지 없을 때만 표시) */}
-                    {messages.length === 0 && (
+                    
                         <div className="demon-hunters-welcome">
                             <div className="welcome-header">
                                 <h2 className="welcome-title">
@@ -344,7 +344,7 @@ function KDH_ChatbotPage() {
                                 <p>Or type your own location below! 🎤</p>
                             </div>
                         </div>
-                    )}
+                
 
                     {/* 기존 메시지 표시 */}
                     {messages.map((message) => (
@@ -365,7 +365,6 @@ function KDH_ChatbotPage() {
 
                 <footer className="chat-footer">
                     <div className="suggested-routes">
-                        <span className="suggest-title">SUGGEST ROUTES</span>
                         <div className="tags">
                             <span 
                                 className="tag tag-kpop"
