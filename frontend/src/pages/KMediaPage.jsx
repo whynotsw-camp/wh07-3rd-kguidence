@@ -160,7 +160,7 @@ function KMediaPage() {
                 
                 <input
                     type="text"
-                    placeholder=" 🔎 제목 또는 장소를 검색하세요"
+                    placeholder=" 🔎 Search for a title or place"
                     value={searchTerm}
                     onChange={handleSearchChange}
                     className="kmedia-search-input"
@@ -199,7 +199,7 @@ function KMediaPage() {
                             disabled={currentPage === 1}
                             className="pagination-button"
                         >
-                            &lt; 이전
+                            &lt; Before
                         </button>
                         
                         {displayPageNumbers.map(page => (
@@ -218,7 +218,7 @@ function KMediaPage() {
                             disabled={currentPage === totalPages}
                             className="pagination-button"
                         >
-                            다음 &gt;
+                        Next &gt;
                         </button>
                     </div>
                 )}

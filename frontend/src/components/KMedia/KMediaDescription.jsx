@@ -1,5 +1,5 @@
 // src/components/KMedia/KMediaDescription.jsx
-// ✅ ScheduleTable과 동일한 인증 로직 + 목적지 추가 API 호출
+// ✅ ScheduleTable과 동일한 인증 로직 + 목적지 추가 API 호출 + 음식점 마커
 
 import React, { useRef, useState, useEffect, useCallback } from "react"; 
 import "./KMediaDescription.css";
@@ -48,7 +48,11 @@ const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthEr
 export default function KMediaDescription({ item, onClose, onAddLocation }) {
     
     const mapElement = useRef(null);
+    const mapInstance = useRef(null);
     const [mapReady, setMapReady] = useState(false);
+    
+    // 🆕 음식점 선택 state 추가
+    const [selectedRestaurant, setSelectedRestaurant] = useState(null);
     
     // 🆕 ScheduleTable과 동일한 인증 state
     const [token, setToken] = useState(localStorage.getItem('session_id'));
@@ -98,7 +102,43 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
         }
     }, []);
 
-    // ✅ 2단계: 지도 & 커스텀 마커 렌더링
+    // ✅ 주변 음식점 로드 함수
+    const loadNearbyRestaurants = useCallback(async (map) => {
+        if (!itemLocation || !map) return;
+
+        const url = `http://localhost:8000/restaurants/nearby?lat=${itemLocation.lat}&lng=${itemLocation.lng}&radius=500`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            console.log("🍽 주변 음식점:", data);
+
+            if (data.restaurants && Array.isArray(data.restaurants)) {
+                data.restaurants.forEach((restaurant) => {
+                    // 🎨 음식점 마커: 빨간색 포크 & 나이프 아이콘
+                    const marker = new window.naver.maps.Marker({
+                        position: new window.naver.maps.LatLng(restaurant.latitude, restaurant.longitude),
+                        map: map,
+                        title: restaurant.name,
+                        icon: {
+                            content: `<div class="restaurant-marker">🍴</div>`,
+                            anchor: new window.naver.maps.Point(16, 16),
+                        }
+                    });
+
+                    // 🖱️ 마커 클릭 이벤트 추가
+                    window.naver.maps.Event.addListener(marker, 'click', () => {
+                        setSelectedRestaurant(restaurant);
+                    });
+                });
+            }
+        } catch (err) {
+            console.error("❌ 음식점 데이터 로드 실패:", err);
+        }
+    }, [itemLocation]);
+
+    // ✅ 2단계: 지도 & 커스텀 마커 렌더링 (통합 버전)
     useEffect(() => {
         if (!mapReady || !mapElement.current || !itemLocation) return;
 
@@ -111,6 +151,10 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
             scaleControl: true,
         });
 
+        // 지도 인스턴스 저장
+        mapInstance.current = map;
+
+        // 메인 장소 마커
         new naver.maps.Marker({
             position: mapCenter,
             map: map,
@@ -123,7 +167,10 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
             title: item.title,
         });
 
-    }, [mapReady, itemLocation, item?.title]);
+        // 🍽 음식점 마커 로드
+        loadNearbyRestaurants(map);
+
+    }, [mapReady, itemLocation, item?.title, loadNearbyRestaurants]);
     
     // 🆕 일정 목록 가져오기
     const fetchSchedules = async () => {
@@ -161,6 +208,13 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
         fetchSchedules();
     };
     
+    // 🆕 음식점을 일정에 추가하는 핸들러
+    const handleAddRestaurantClick = () => {
+        console.log("🔍 음식점 추가:", selectedRestaurant);
+        setShowSchedulePopup(true);
+        fetchSchedules();
+    };
+    
     // 🆕 일정 선택 핸들러
     const handleScheduleSelect = (schedule) => {
         setSelectedSchedule(schedule);
@@ -169,13 +223,18 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
     // 🆕 일정에 목적지 추가 확정 - API 호출 포함!
     const handleConfirmAddToSchedule = async () => {
         if (!selectedSchedule) {
-            alert('일정을 선택해주세요.');
+            alert('Please select a schedule.');
             return;
         }
         
+        // 음식점 추가인지 장소 추가인지 확인
+        const isRestaurant = selectedRestaurant !== null;
+        const targetItem = isRestaurant ? selectedRestaurant : item;
+        
         console.log('🔍 목적지 추가 시작:', {
             schedule: selectedSchedule,
-            item: item
+            isRestaurant: isRestaurant,
+            targetItem: targetItem
         });
         
         // day_title에서 숫자 추출 (예: "1days" -> 1)
@@ -186,15 +245,26 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
             setIsLoadingSchedules(true);
             
             // 요청 데이터 구성
-            const requestData = {
+            const requestData = isRestaurant ? {
+                // 🍽 음식점 추가
                 day_number: dayNumber,
-                name: item.title || item.title_en || item.location,
-                place_type: 1, // 🎯 1 = 명소 (K-Content)
-                reference_id: item.id,
-                latitude: parseFloat(item.latitude) || null,
-                longitude: parseFloat(item.longitude) || null,
+                name: targetItem.name,
+                place_type: 0, // 🎯 0  = 음식점
+                reference_id: targetItem.restaurant_id,
+                latitude: parseFloat(targetItem.latitude) || null,
+                longitude: parseFloat(targetItem.longitude) || null,
                 visit_order: null,
-                notes: item.description ? item.description.substring(0, 500) : null // 최대 500자 제한
+                notes: targetItem.title ? targetItem.title.substring(0, 500) : null
+            } : {
+                // 🎨 명소 추가
+                day_number: dayNumber,
+                name: targetItem.location || targetItem.title || targetItem.title_en,
+                place_type: 1, // 🎯 1 = 명소
+                reference_id: targetItem.id,
+                latitude: parseFloat(targetItem.latitude) || null,
+                longitude: parseFloat(targetItem.longitude) || null,
+                visit_order: null,
+                notes: targetItem.title_en ? targetItem.title_en.substring(0, 500) : null
             };
             
             console.log('🔍 API 요청 데이터:', requestData);
@@ -224,11 +294,17 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
             setSelectedSchedule(null);
             
             // 성공 메시지
-            alert(result.message || `"${item.title}"이(가) "${selectedSchedule.day_title}"에 추가되었습니다! 🎉`);
+            const itemName = isRestaurant ? targetItem.name : (targetItem.title || targetItem.location);
+            alert(result.message || `"${itemName}" has been added to "${selectedSchedule.day_tile}"!🎉`);
+            
+            // 음식점 카드 닫기 (음식점 추가인 경우)
+            if (isRestaurant) {
+                setSelectedRestaurant(null);
+            }
             
             // 부모 컴포넌트의 onAddLocation 호출 (ScheduleTable 새로고침용)
             if (onAddLocation) {
-                await onAddLocation(item, selectedSchedule.day_title);
+                await onAddLocation(isRestaurant ? targetItem : item, selectedSchedule.day_title);
             }
             
         } catch (error) {
@@ -248,7 +324,7 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
     
     if (!item) return null;
 
-    // 🎨 이미지 배열 생성 로직 수정
+    // 🎨 이미지 배열 생성 로직
     let images = [];
     
     // 이미지가 1개만 있는 경우: thumbnail만 표시
@@ -312,6 +388,65 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
                         </div>
                     </div>
 
+                    {/* ✅ 음식점 정보 표시 영역 */}
+                    {selectedRestaurant && (
+                        <div className="restaurant-info-card">
+                            <div className="restaurant-header">
+                                <h3 className="restaurant-title">
+                                    {selectedRestaurant.name}
+                                </h3>
+                                <button 
+                                    className="close-button"
+                                    onClick={() => setSelectedRestaurant(null)}
+                                >
+                                    ×
+                                </button>
+                            </div>
+
+                            {selectedRestaurant.image && (
+                            <img
+                                    src={`/${selectedRestaurant.image}`}
+                                    alt={selectedRestaurant.name}
+                                    className="restaurant-image"
+                                />
+                            )}
+
+                            <div className="restaurant-details">
+                                <div className="detail-item">
+                                    <span className="detail-icon">📍</span>
+                                    <span className="detail-text">{selectedRestaurant.place}</span>
+                                </div>
+                                
+                                {selectedRestaurant.near_subway && (
+                                    <div className="detail-item">
+                                        <span className="detail-icon">🚇</span>
+                                        <span className="detail-text">{selectedRestaurant.near_subway}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {selectedRestaurant.description && (
+                                <div className="restaurant-description">
+                                    <h4 className="description-title">Detailed information</h4>
+                                    <p className="description-text">
+                                        {selectedRestaurant.description}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* ✅ 음식점 일정 추가 버튼 */}
+                            <button 
+                                className="restaurant-add-btn"
+                                onClick={handleAddRestaurantClick}
+                            >
+                                <svg width="40%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+ <path d="M3 21H21M12 3V17M12 17L19 10M12 17L5 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+ </svg>
+
+                            </button>
+                        </div>
+                    )}
+
                     <button 
                         className="desc-add-btn"
                         onClick={handleAddPlaceClick}
@@ -329,9 +464,9 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
                         
                         <button className="schedule-close-btn" onClick={handleCloseSchedulePopup}>✕</button>
                         
-                        <h2 className="schedule-popup-title">📅 일정 선택</h2>
+                        <h2 className="schedule-popup-title">📅 Select Schedule</h2>
                         <p className="schedule-popup-subtitle">
-                            "{item.title}"을(를) 추가할 일정을 선택하세요
+                            "{selectedRestaurant ? selectedRestaurant.name : (item.title || item.location)}"Select a schedule to add
                         </p>
                         
                         {authError && (
@@ -354,8 +489,8 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
                         
                         {!isLoadingSchedules && !scheduleError && !authError && schedules.length === 0 && (
                             <div className="schedule-empty">
-                                <p>등록된 일정이 없습니다.</p>
-                                <p>먼저 일정을 생성해주세요.</p>
+                                <p>There is no registered schedule.</p>
+                                <p>Please create a schedule first.</p>
                             </div>
                         )}
                         
@@ -386,14 +521,14 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
                                 className="schedule-cancel-btn"
                                 onClick={handleCloseSchedulePopup}
                             >
-                                취소
+                                Cancellation
                             </button>
                             <button 
                                 className="schedule-confirm-btn"
                                 onClick={handleConfirmAddToSchedule}
                                 disabled={!selectedSchedule || isLoadingSchedules}
                             >
-                                {isLoadingSchedules ? '추가 중...' : '선택 완료'}
+                                {isLoadingSchedules ? 'Adding...': 'Selected'}
                             </button>
                         </div>
                         

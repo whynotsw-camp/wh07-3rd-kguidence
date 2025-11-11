@@ -37,7 +37,7 @@ class DestinationFromConversation(BaseModel):
 class DestinationAddRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     day_number: int  # 🎯 schedule_id → day_number
-    place_type: int = Field(default=2, ge=0, le=2, description="0=일반, 1=명소, 2=축제")
+    place_type: int = Field(default=2, ge=0, le=2, description="0=음식점, 1=명소, 2=축제")
     reference_id: Optional[int] = Field(None, gt=0, description="festival_id 또는 attr_id")
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)

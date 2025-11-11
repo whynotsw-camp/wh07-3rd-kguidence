@@ -124,3 +124,5 @@ def delete_kcontent(content_id: int, db: Session = Depends(get_db)):
     db.delete(content)
     db.commit()
     return None
+
+
