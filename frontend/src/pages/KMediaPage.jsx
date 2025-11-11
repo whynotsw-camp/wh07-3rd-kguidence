@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {fetchKContentList,fetchKContentDetail} from "../components/KMedia/KMediaCardData";
+import {
+    fetchShuffledKContentList, // <<< 1. fetchShuffledKContentList로 변경
+    fetchKContentDetail
+} from "../components/KMedia/KMediaCardData";
 import KMediaCard from "../components/KMedia/KMediaCard";
 import KMediaDescription from "../components/KMedia/KMediaDescription";
 import "../styles/KMediaPage.css";
@@ -25,7 +28,9 @@ function KMediaPage() {
         const loadKContentData = async () => {
             setIsLoading(true);
             try {
-                const data = await fetchKContentList(0, 9999); 
+                // <<< 2. 호출 함수를 fetchShuffledKContentList로 변경
+                const data = await fetchShuffledKContentList(0, 9999); 
+                
                 setMediaData(data);
                 setError(null);
             } catch (err) {
@@ -218,7 +223,7 @@ function KMediaPage() {
                             disabled={currentPage === totalPages}
                             className="pagination-button"
                         >
-                        Next &gt;
+                            Next &gt;
                         </button>
                     </div>
                 )}

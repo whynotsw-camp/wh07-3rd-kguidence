@@ -56,6 +56,11 @@ from .kcontent_schema import (
     KContentResponse
 )
 
+from .schedule_table_meta_schema import (
+    ScheduleTableRowData, 
+    UpdateScheduleTableRequest, 
+    ScheduleTableDataResponse
+)
 __all__ = [
     # User
     "UserBase", "UserCreate", "UserResponse", 
@@ -83,5 +88,8 @@ __all__ = [
     "ScheduleEdit", "ScheduleResponse",
 
     # KContent <- 새로 추가
-    "KContentCreate", "KContentEdit", "KContentResponse"
+    "KContentCreate", "KContentEdit", "KContentResponse",
+    
+    "ScheduleTableRowData", "UpdateScheduleTableRequest", "ScheduleTableDataResponse"
 ]
+

@@ -3,7 +3,6 @@ import { Trash2 } from 'lucide-react';
 import '../styles/ScheduleTable.css';
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-// ✅ 컴포넌트 외부 함수: 인증 기반 Fetch 로직
 const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthError) => {
     setAuthError(null);
     if (!token) {
@@ -40,7 +39,8 @@ const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthEr
 
 const createNewRow = () => ({
     id: `row-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-    label: ''
+    label: '',
+    destination_id: null
 });
 
 const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
@@ -49,8 +49,8 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     const [selectedDayTitle, setSelectedDayTitle] = useState('');
     const [description, setDescription] = useState('');
     const [authError, setAuthError] = useState(null);
-    const [isLoadingDestinations, setIsLoadingDestinations] = useState(false);
-
+    const [isLoadingTable, setIsLoadingTable] = useState(false);
+    const [isSavingTable, setIsSavingTable] = useState(false);
     const [isDeletionModeActive, setIsDeletionModeActive] = useState(false);
 
     const initialDays = ['Time','Location', 'Estimated Cost', 'Memo', 'Notice'];
@@ -64,55 +64,62 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
         globalFetchWithAuth(url, options, token, setToken, setAuthError),
     [token]);
 
-    const fetchDestinations = useCallback(async () => {
+    // 🆕 테이블 전체 데이터 로드 (컬럼 순서 + 행 데이터)
+    const fetchTableData = useCallback(async () => {
         if (!selectedDayTitle || !token) return;
-        setIsLoadingDestinations(true);
+        setIsLoadingTable(true);
 
         try {
             const response = await fetchWithAuth(
-                `http://localhost:8000/api/destinations/by-schedule?day_title=${encodeURIComponent(selectedDayTitle)}`
+                `http://localhost:8000/api/destinations/schedule-table-data?day_title=${encodeURIComponent(selectedDayTitle)}`
             );
-            const destinations = await response.json();
-            const numDestinations = destinations.length;
-            const locationColumnName = 'Location';
-            const noticeColumnName = 'Notice';
+            const data = await response.json();
+            
+            console.log("📥 테이블 데이터:", data);
 
-            let newCellData = {};
-            let newRowsArray = [];
+            // 1. 컬럼 순서 설정
+            if (data.column_order && data.column_order.length > 0) {
+                setScheduleDays(data.column_order);
+            }
 
-            setScheduleRows(prevRows => {
-                for (let i = 0; i < numDestinations; i++) {
-                    if (i < prevRows.length) {
-                        newRowsArray.push(prevRows[i]);
-                    } else {
-                        newRowsArray.push(createNewRow());
-                    }
-                }
-                return newRowsArray;
-            });
+            // 2. 행 데이터 설정
+            if (data.rows && data.rows.length > 0) {
+                const newRows = [];
+                const newCellData = {};
 
-            newRowsArray.forEach((row, i) => {
-                const locationKey = `${row.id}-${locationColumnName}`;
-                const noticeKey = `${row.id}-${noticeColumnName}`;
-                
-                newCellData[locationKey] = destinations[i]?.name || "";
-                newCellData[noticeKey] = destinations[i]?.notes || "";
-            });
+                data.rows.forEach((rowData, index) => {
+                    const row = {
+                        id: `row-${Date.now()}-${index}`,
+                        destination_id: rowData.destination_id
+                    };
+                    newRows.push(row);
 
-            setCellData(prev => ({
-                ...prev,
-                ...newCellData
-            }));
+                    // 각 컬럼의 셀 데이터 설정
+                    data.column_order.forEach(columnName => {
+                        const key = `${row.id}-${columnName}`;
+                        newCellData[key] = rowData[columnName] || '';
+                    });
+                });
+
+                setScheduleRows(newRows);
+                setCellData(newCellData);
+            } else {
+                // 데이터가 없으면 빈 행 3개
+                setScheduleRows([createNewRow(), createNewRow(), createNewRow()]);
+                setCellData({});
+            }
+
         } catch (error) {
-            console.error("❌ 목적지 조회 실패:", error.message);
+            console.error("❌ 테이블 데이터 조회 실패:", error.message);
         } finally {
-            setIsLoadingDestinations(false);
+            setIsLoadingTable(false);
         }
     }, [selectedDayTitle, token, fetchWithAuth]);
 
+    // Day Title 변경 시 테이블 데이터 로드
     useEffect(() => {
-        fetchDestinations();
-    }, [fetchDestinations]);
+        fetchTableData();
+    }, [fetchTableData]);
 
     useEffect(() => {
         if (!token) return;
@@ -164,12 +171,70 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             .then(res => res.json())
             .then((data) => {
                 console.log("✅ 저장 성공:", data);
-                alert('Description이 저장되었습니다! ✅');
+                alert('Description is Saved! ✅');
             })
             .catch(err => {
                 console.error("❌ 저장 실패", err.message);
-                alert(`저장 실패: ${err.message}`);
+                alert(`Save fail: ${err.message}`);
             });
+    };
+
+    // 🆕 테이블 전체 저장 (컬럼 순서 + 행 데이터)
+    const handleSaveTableData = async () => {
+        if (!selectedDayTitle || !token) {
+            alert('Select schedule.');
+            return;
+        }
+
+        setIsSavingTable(true);
+
+        try {
+            // 행 데이터 구성
+            const rows = scheduleRows.map((row, index) => {
+                const rowData = {
+                    destination_id: row.destination_id,
+                    visit_order: index + 1
+                };
+
+                // 모든 컬럼의 값 추가
+                scheduleDays.forEach(columnName => {
+                    rowData[columnName] = getCellValue(row.id, columnName) || '';
+                });
+
+                return rowData;
+            }).filter(row => row.Location && row.Location.trim()); // Location 있는 행만
+
+            console.log('📤 저장할 데이터:', {
+                day_title: selectedDayTitle,
+                column_order: scheduleDays,
+                rows: rows
+            });
+
+            const response = await fetchWithAuth(
+                'http://localhost:8000/api/destinations/update-schedule-data',
+                {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        day_title: selectedDayTitle,
+                        column_order: scheduleDays,
+                        rows: rows
+                    })
+                }
+            );
+
+            const result = await response.json();
+            console.log('✅ 저장 성공:', result);
+            alert(`Table saved!\n${result.message}`);
+
+            // 저장 후 데이터 새로고침
+            await fetchTableData();
+
+        } catch (error) {
+            console.error('❌ 테이블 저장 실패:', error.message);
+            alert(`저장 실패: ${error.message}`);
+        } finally {
+            setIsSavingTable(false);
+        }
     };
 
     const handleDayTitleChange = (e) => {
@@ -209,7 +274,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
     const handleRemoveColumn = (column) => {
         if (!isDeletionModeActive) return;
-        if (window.confirm("Are you sure you want to delete this?")) {
+        if (window.confirm(`"${column}" 컬럼을 삭제하시겠습니까?`)) {
             setScheduleDays(prev => prev.filter(day => day !== column));
             setCellData(prev => {
                 const newData = {...prev};
@@ -220,11 +285,11 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     };
 
     const handleAddColumn = () => {
-        const newColumn = prompt("Enter items to add:");
+        const newColumn = prompt("추가할 컬럼 이름을 입력하세요:");
         if (newColumn && !scheduleDays.includes(newColumn)) {
             setScheduleDays([...scheduleDays, newColumn]);
         } else if (newColumn) {
-            alert("It already exists.");
+            alert("이미 존재하는 컬럼입니다.");
         }
     };
 
@@ -274,9 +339,27 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
         <div className="kschedule-container">
             <header className="kschedule-header">
                 <h1>🗓️ Schedule Management and Editor</h1>
-                {isLoadingDestinations && (
+
+                                        <button 
+                            onClick={handleSaveTableData} 
+                            className="kschedule-btn-success_ok"
+                            disabled={isSavingTable}
+                            style={{ 
+                                background: isSavingTable ? '#6c757d' : '#28a745',
+                                cursor: isSavingTable ? 'not-allowed' : 'pointer'
+                            }}
+                        >
+                            💾 {isSavingTable ? 'Saving...' : 'Save Table'}
+                        </button>
+
+                {isLoadingTable && (
                     <p style={{color: '#007bff'}}>
-                        ⏳ 목적지 데이터 불러오는 중...
+                        ⏳ 테이블 데이터 불러오는 중...
+                    </p>
+                )}
+                {isSavingTable && (
+                    <p style={{color: '#28a745'}}>
+                        💾 테이블 저장 중...
                     </p>
                 )}
             </header>
@@ -284,7 +367,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             {authError && (
                 <div className="kschedule-error-message">
                     <p>🛑 **에러:** {authError}</p>
-                    {authError.includes('로그인') && <p>잠시 후 메인 페이지로 이동합니다...</p>}
+                    {authError.includes('Login error') && <p>잠시 후 메인 페이지로 이동합니다...</p>}
                 </div>
             )}
 
@@ -313,7 +396,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                         />
 
                         <button className="kschedule-btn-success" onClick={handleSave}>
-                            ✅ Save
+                            ✅ Save Description
                         </button>
                     </div>
 
@@ -332,8 +415,9 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                         </button>
 
                         <button onClick={handleAddColumn} className="kschedule-btn-secondary">
-                            ➕ Add Columns
+                            ➕ Add Column
                         </button>
+
                         <button onClick={handleDownloadCSV} className="kschedule-btn-info">
                             📥 CSV Download
                         </button>
