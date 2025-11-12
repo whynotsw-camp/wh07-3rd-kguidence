@@ -401,8 +401,4 @@
     display: block;
 }
 
-/* 마커 이름의 테두리 색상을 흰색으로 고정하려면 아래를 추가 (선택 사항) */
-.kpath-marker-label {
-    border-color: #2d47df
-}
 

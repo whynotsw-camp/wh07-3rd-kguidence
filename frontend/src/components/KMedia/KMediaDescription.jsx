@@ -259,7 +259,7 @@ export default function KMediaDescription({ item, onClose, onAddLocation }) {
                 // 🎨 명소 추가
                 day_number: dayNumber,
                 name: targetItem.location || targetItem.title || targetItem.title_en,
-                place_type: 1, // 🎯 1 = 명소
+                place_type: 2, // 🎯 1 = 명소
                 reference_id: targetItem.id,
                 latitude: parseFloat(targetItem.latitude) || null,
                 longitude: parseFloat(targetItem.longitude) || null,

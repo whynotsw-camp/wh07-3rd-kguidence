@@ -258,12 +258,12 @@ const ConcertPage = ({ isEmbedded }) => {
             const requestData = {
                 day_number: dayNumber,
                 name: concertToAdd.place,
-                place_type: 2, // 🎯 2 = 콘서트 장소
+                place_type: 1,
                 reference_id: concertToAdd.id,
                 latitude: parseFloat(concertToAdd.latitude) || null,
                 longitude: parseFloat(concertToAdd.longitude) || null,
                 visit_order: null,
-                notes: `${concertToAdd.place || ''} | ${formatDate(concertToAdd.start_date)} - ${formatDate(concertToAdd.end_date)}`.substring(0, 500)
+                notes: concertToAdd.title
             };
             
             console.log('🔍 API 요청 데이터:', requestData);

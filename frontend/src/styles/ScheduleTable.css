@@ -3,7 +3,7 @@
 /* 전체 컨테이너 스타일 */
 .kschedule-container {
     max-width: 1000px;
-    margin: 30px auto;
+    margin: 0px auto;
     padding: 25px;
     border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.1);

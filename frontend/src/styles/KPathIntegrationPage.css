@@ -75,11 +75,12 @@
     flex-direction: column;
     flex-grow: 1; /* 남은 공간 모두 차지 */
     border-radius: 12px;
+    margin-top: 5px;
 }
 
 @media (min-width: 1024px) {
     .kpath-schedule-panel {
-        width: 30%;
+        width: 40%;
         flex-grow: 1; 
         min-height: calc(100vh - 3rem); 
         overflow-y: auto; 
@@ -113,7 +114,8 @@
     font-size: 3rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 0.5rem;
+    margin-top: 2%;
+    margin-bottom: 0.1rem;
     animation: fadeInUpKPath 1s ease-out forwards; 
     /* ✅ 항상 빛나도록 */
     text-shadow: 
@@ -127,7 +129,7 @@
 .kpath-header-subtitle {
     font-size: 1.5rem;
     color: #c8cfdb;
-    margin-bottom: 1.5rem; /* 모션 적용 */
+    margin-bottom: 0rem; /* 모션 적용 */
     opacity: 0; /* 초기 상태 안보이게 */
     animation: fadeInUpKPath 1s ease-out forwards; 
     text-align: center; 
