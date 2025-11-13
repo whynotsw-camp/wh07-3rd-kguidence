@@ -33,16 +33,21 @@ class DestinationFromConversation(BaseModel):
     names: list[str] = Field(..., min_items=1)
     conversation_id: int = Field(..., gt=0)
 
-# 🎯 축제/명소 추가용 새로운 스키마들
+# 🎯 축제/명소/레스토랑/K-Contents 추가용 새로운 스키마들
 class DestinationAddRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     day_number: int  # 🎯 schedule_id → day_number
-    place_type: int = Field(default=2, ge=0, le=2, description="0=일반, 1=명소, 2=축제")
-    reference_id: Optional[int] = Field(None, gt=0, description="festival_id 또는 attr_id")
+    place_type: int = Field(
+        default=2, 
+        ge=0, 
+        le=3,  # ✅ 수정: le=2 → le=3 (K-Contents 지원)
+        description="0=레스토랑, 1=관광명소, 2=축제, 3=K-Contents"  # ✅ 설명 업데이트
+    )
+    reference_id: Optional[int] = Field(None, gt=0, description="restaurant_id, attr_id, festival_id, 또는 content_id")
     latitude: Optional[float] = Field(None, ge=-90, le=90)
     longitude: Optional[float] = Field(None, ge=-180, le=180)
-    notes: Optional[str] = Field(None, max_length=500, description="사용자 메모")  # 추가
-    visit_order: Optional[int] = None  # 🎯 추가
+    notes: Optional[str] = Field(None, max_length=500, description="사용자 메모")
+    visit_order: Optional[int] = None
 
 
 class DestinationAddResponse(BaseModel):
