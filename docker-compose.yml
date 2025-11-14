@@ -22,6 +22,7 @@ services:
   #     interval: 10s
   #     timeout: 5s
   #     retries: 5
+  
 
   # Redis (세션 저장소)
   redis:
@@ -65,7 +66,8 @@ services:
     networks:
       - ktravel_network
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
+    env_file:
+      - .env
   # React 프론트엔드
   frontend:
     build:
@@ -88,6 +90,8 @@ services:
       - ktravel_network
     stdin_open: true
     tty: true
+
+
 
 networks:
   ktravel_network:

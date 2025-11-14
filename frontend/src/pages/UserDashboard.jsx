@@ -7,6 +7,7 @@ import {
   getCurrentUser,
   PlaceType,
 } from '../services/bookmarkService';
+import { getLlmEnhancedRecommendations } from '../services/recommendLlmService';
 
 // 대시보드용 컴포넌트들
 import RecommendedSlider from '../components/dashboard/RecommendedSlider';
@@ -25,6 +26,9 @@ const UserDashboard = () => {
   const [isLoadingBookmarks, setIsLoadingBookmarks] = useState(true);
   const [bookmarkError, setBookmarkError] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
+  const [llmRecommendations, setLlmRecommendations] = useState([]);
+  const [isLoadingRecs, setIsLoadingRecs] = useState(true);
+  const [recsError, setRecsError] = useState(null);
 
   // --- 목 데이터(추천/취향/리마인더) ---
   const recommendedContent = [
@@ -145,6 +149,15 @@ const UserDashboard = () => {
     },
   ];
 
+  // ✅ 슬라이더와 추천 카드용 아이템 결정
+  const sliderItems =
+    llmRecommendations.length > 0 ? llmRecommendations : recommendedContent;
+
+  const recentItems =
+    llmRecommendations.length > 0
+      ? llmRecommendations.slice(0, 6)
+      : recentRecommendations;
+
   // PlaceType → 한글 카테고리
   const getCategoryFromPlaceType = (placeType) => {
     switch (placeType) {
@@ -220,48 +233,87 @@ const UserDashboard = () => {
     } catch (error) {
       console.error('❌ 북마크 조회 에러:', error);
       setBookmarkError(error.message);
-
-      // 임시 Mock 데이터
-      console.log('⚠️ Mock 데이터 사용');
-      setBookmarks([
-        {
-          id: 1,
-          image: '/api/placeholder/200/150',
-          title: '남산타워',
-          category: '명소',
-          tags: ['야경', '데이트'],
-          actors: null,
-          saved: true,
-          savedDate: '2024-01-15',
-        },
-        {
-          id: 2,
-          image: '/api/placeholder/200/150',
-          title: '사랑의 불시착 촬영지',
-          category: 'K콘텐츠',
-          tags: ['드라마', '현빈'],
-          actors: ['현빈', '손예진'],
-          saved: true,
-          savedDate: '2024-01-10',
-        },
-        {
-          id: 3,
-          image: '/api/placeholder/200/150',
-          title: '명동 칼국수',
-          category: '음식',
-          tags: ['맛집', '로컬'],
-          actors: null,
-          saved: true,
-          savedDate: '2024-01-08',
-        },
-      ]);
+      setBookmarks([]);
     } finally {
       setIsLoadingBookmarks(false);
     }
   };
 
+  // ✅ LLM 기반 추천 조회 (수정됨)
+  const fetchLlmRecommendations = async (user) => {
+    try {
+      setIsLoadingRecs(true);
+      setRecsError(null);
+
+      const targetUser = user || currentUser || (await fetchCurrentUser());
+
+      if (!targetUser || !targetUser.id) {
+        console.warn('⚠️ 사용자 정보 없음 - 목 데이터 사용');
+        setLlmRecommendations([]);
+        setIsLoadingRecs(false);
+        return;
+      }
+
+      console.log('📡 LLM 추천 조회 시작: user_id =', targetUser.id);
+
+      const data = await getLlmEnhancedRecommendations({
+        userId: targetUser.id,
+        placeType: 3, // K-콘텐츠만
+        topKPerBookmark: 5,
+        useLlm: false, // 빠른 추천
+      });
+
+      console.log('✅ LLM 추천 응답:', data);
+
+      // 추천이 없으면 빈 배열로
+      if (!data.recommendations || data.recommendations.length === 0) {
+        console.warn('⚠️ 추천 결과가 없습니다. 목 데이터를 사용합니다.');
+        setLlmRecommendations([]);
+        setIsLoadingRecs(false);
+        return;
+      }
+
+      // data.recommendations 배열을 대시보드에서 쓰기 좋게 매핑
+      const mapped = data.recommendations.map((item, idx) => ({
+        id: item.reference_id ?? idx,
+        image: item.image_url || '/api/placeholder/400/300',
+        title: item.name,
+        category: getCategoryFromPlaceType(item.place_type),
+        location: item.address || '',
+        reason: item.llm_reason || '이 장소를 추천드립니다.',
+        tags:
+          item.extra?.keyword_en
+            ?.split(',')
+            .map((t) => t.trim())
+            .filter(Boolean) || [],
+      }));
+
+      console.log('✅ 매핑된 추천:', mapped);
+      setLlmRecommendations(mapped);
+    } catch (error) {
+      console.error('❌ LLM 추천 조회 실패:', error);
+      setRecsError(error.message);
+      
+      // 에러 발생 시 빈 배열로 (목 데이터 사용)
+      setLlmRecommendations([]);
+    } finally {
+      setIsLoadingRecs(false);
+    }
+  };
+
   useEffect(() => {
-    fetchBookmarks();
+    const init = async () => {
+      console.log('🚀 Dashboard 초기화');
+      const user = await fetchCurrentUser();
+      
+      // 병렬로 실행
+      await Promise.all([
+        fetchBookmarks(),
+        fetchLlmRecommendations(user),
+      ]);
+    };
+    
+    init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -311,11 +363,13 @@ const UserDashboard = () => {
 
   // 슬라이더 이동
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % recommendedContent.length);
+    setCurrentSlide((prev) => (prev + 1) % sliderItems.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + recommendedContent.length) % recommendedContent.length);
+    setCurrentSlide(
+      (prev) => (prev - 1 + sliderItems.length) % sliderItems.length
+    );
   };
 
   // 필터 + 정렬 적용
@@ -349,18 +403,19 @@ const UserDashboard = () => {
       {/* 상단: 추천 슬라이더 + 취향 분석 */}
       <div className="top-section">
         <RecommendedSlider
-          items={recommendedContent}
+          items={sliderItems}
           currentSlide={currentSlide}
           onPrev={prevSlide}
           onNext={nextSlide}
         />
         <TasteAnalysisCard tasteAnalysis={tasteAnalysis} />
       </div>
-      {/* 북마크 기반 콘텐츠 추천 */}
-      <RecommendationBookmark items={recentRecommendations} />
-      
+
+      {/* ✅ 좋아하는 콘텐츠 추천 (LLM 추천 사용) */}
+      <RecommendationBookmark items={recentItems} />
+
       {/* 최근 살펴본 콘텐츠 기반 추천 */}
-      <RecentRecommendationGrid items={recentRecommendations} />
+      <RecentRecommendationGrid items={recentItems} />
 
       {/* 북마크 + 리마인더 */}
       <div className="bookmark-section">

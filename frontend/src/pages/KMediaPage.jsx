@@ -172,7 +172,6 @@ function KMediaPage() {
     const handleLikeToggle = async (id) => {
         console.log('🔥 하트 클릭됨! ID:', id);
         
-        // 해당 아이템 찾기
         const item = mediaData.find(i => i.id === id);
         if (!item) {
             console.error('❌ 아이템을 찾을 수 없습니다:', id);
@@ -182,7 +181,7 @@ function KMediaPage() {
         const newLikedState = !item.liked;
         console.log('💖 새 상태:', newLikedState ? '좋아요' : '좋아요 취소');
 
-        // 1️⃣ 먼저 화면 업데이트 (즉각 반응)
+        // 화면 즉시 반영
         setMediaData(prevData =>
             prevData.map(i =>
                 i.id === id ? { ...i, liked: newLikedState } : i
@@ -191,38 +190,52 @@ function KMediaPage() {
 
         try {
             if (newLikedState) {
-                // ✅ 북마크 추가
+                // ✅ 북마크 추가 (DB 컬럼 구조에 맞게 필드 채우기)
                 const result = await addBookmark({
                     userId: userId,
-                    name: item.title || item.title_en,
-                    placeType: PlaceType.KCONTENT,  // 3
-                    referenceId: item.id,
-                    latitude: item.latitude,
-                    longitude: item.longitude,
-                    imageUrl: item.thumbnail,
-                    notes: null
+                    name: item.title || item.name,  // 표시용 이름
+                    placeType: PlaceType.KCONTENT,   // 3
+
+                    // 🔑 Qdrant / 추천에서 기준이 되는 ID
+                    referenceId: item.reference_id || item.id,
+
+                    // ✅ 영어 정보들 (없으면 빈 문자열)
+                    locationName: item.location_name_en || item.location_name || "",
+                    address: item.address_en || "",
+                    category: item.category_en || "",
+                    keyword: item.keyword_en || "",
+                    tripTipEn: item.trip_tip_en || "",
+
+                    // 위치 정보
+                    latitude: item.latitude ?? null,
+                    longitude: item.longitude ?? null,
+
+                    // 이미지
+                    imageUrl: item.thumbnail || (item.image_url_list?.[0] ?? ""),
+
+                    // 기타
+                    notes: null,
+                    extractedFromConversId: 0,   // 대화에서 추출한 게 아니면 0
                 });
-                
+
                 console.log('✅ K-콘텐츠 북마크 저장 성공!', result);
-                
-                // ✅ bookmarkId 저장!
+
+                // bookmark_id 반영
                 setMediaData(prevData =>
                     prevData.map(i =>
                         i.id === id ? { ...i, bookmarkId: result.bookmark_id } : i
                     )
                 );
-                
             } else {
-                // ✅ 북마크 삭제 - bookmarkService의 deleteBookmark 사용!
+                // ✅ 북마크 삭제
                 if (!item.bookmarkId) {
                     console.error('❌ bookmarkId가 없습니다!');
                     throw new Error('북마크 ID를 찾을 수 없습니다.');
                 }
-                
+
                 await deleteBookmark(item.bookmarkId, userId);
                 console.log('✅ 북마크 삭제 성공!');
-                
-                // bookmarkId 제거
+
                 setMediaData(prevData =>
                     prevData.map(i =>
                         i.id === id ? { ...i, bookmarkId: null } : i
@@ -232,8 +245,8 @@ function KMediaPage() {
         } catch (err) {
             console.error('❌ 저장/삭제 실패:', err);
             alert('처리에 실패했습니다: ' + err.message);
-            
-            // 실패하면 화면도 원래대로 되돌리기
+
+            // 실패 시 화면 상태 되돌리기
             setMediaData(prevData =>
                 prevData.map(i =>
                     i.id === id ? { ...i, liked: !newLikedState } : i
@@ -241,6 +254,7 @@ function KMediaPage() {
             );
         }
     };
+
 
     // 필터링된 목록 계산
     const filteredMedia = useMemo(() => {

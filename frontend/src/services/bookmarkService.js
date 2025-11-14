@@ -1,11 +1,6 @@
 /**
  * 📡 bookmarkService.js
  * 백엔드 북마크 API와 통신하는 서비스 레이어
- * 
- * 백엔드 API 구조:
- * - POST   /api/bookmark              → 북마크 생성
- * - GET    /api/bookmark/{user_id}    → 북마크 목록 조회
- * - DELETE /api/bookmark/{bookmark_id}/{user_id} → 북마크 삭제
  */
 
 const API_BASE = 'http://localhost:8000/api';
@@ -51,88 +46,11 @@ export const getBookmarks = async (userId) => {
 
         const bookmarks = await response.json();
         console.log('✅ 북마크 조회 성공:', bookmarks.length, '개');
-        console.log('📦 원본 데이터:', bookmarks);
         
         return bookmarks;
     } catch (error) {
         console.error('❌ 북마크 조회 에러:', error);
         throw error;
-    }
-};
-
-/**
- * 🎬 K-콘텐츠 북마크만 필터링
- * @param {number} userId - 사용자 ID
- * @returns {Promise<Array>} K-콘텐츠 북마크 목록
- */
-export const getKContentBookmarks = async (userId) => {
-    try {
-        const allBookmarks = await getBookmarks(userId);
-        
-        console.log('📊 전체 북마크 통계:');
-        console.log('  - 총 개수:', allBookmarks.length);
-        
-        // place_type별 분포 확인
-        const typeDistribution = {
-            '음식점(0)': 0,
-            '축제(1)': 0,
-            '명소(2)': 0,
-            'K-콘텐츠(3)': 0
-        };
-        
-        allBookmarks.forEach(b => {
-            switch(b.place_type) {
-                case PlaceType.RESTAURANT: typeDistribution['음식점(0)']++; break;
-                case PlaceType.FESTIVAL: typeDistribution['축제(1)']++; break;
-                case PlaceType.ATTRACTION: typeDistribution['명소(2)']++; break;
-                case PlaceType.KCONTENT: typeDistribution['K-콘텐츠(3)']++; break;
-            }
-        });
-        
-        console.log('  - place_type 분포:', typeDistribution);
-        
-        // ✅ place_type === 3인 것만 필터링 (K-콘텐츠)
-        const kcontentBookmarks = allBookmarks
-            .filter(b => {
-                const isKContent = b.place_type === PlaceType.KCONTENT;
-                if (isKContent) {
-                    console.log(`  ✓ K-콘텐츠: ${b.name} (id: ${b.bookmark_id})`);
-                }
-                return isKContent;
-            })
-            // ✅ 중복 제거 (reference_id 기준)
-            .reduce((unique, item) => {
-                const exists = unique.find(u => u.referenceId === item.reference_id);
-                if (!exists) {
-                    unique.push({
-                        id: item.bookmark_id,
-                        title: item.name,
-                        img: item.image_url || 'https://via.placeholder.com/200?text=No+Image',
-                        referenceId: item.reference_id,
-                        latitude: item.latitude,
-                        longitude: item.longitude,
-                        notes: item.notes,
-                        createdAt: item.created_at,
-                        placeType: item.place_type
-                    });
-                } else {
-                    console.log(`  ⚠️ 중복 제거: ${item.name}`);
-                }
-                return unique;
-            }, []);
-
-        console.log('🎬 K-콘텐츠 북마크 최종:', kcontentBookmarks.length, '개');
-        
-        if (kcontentBookmarks.length === 0) {
-            console.warn('⚠️ K-콘텐츠 북마크가 없습니다!');
-            console.log('💡 place_type=3인 북마크를 추가하세요.');
-            console.log('💡 K-Spotlight 페이지에서 하트를 눌러 북마크를 추가할 수 있습니다.');
-        }
-        
-        return kcontentBookmarks;
-    } catch (error) {
-        console.error('❌ K-콘텐츠 북마크 조회 실패:', error);
-        return [];
     }
 };
 
@@ -144,27 +62,27 @@ export const getKContentBookmarks = async (userId) => {
  * @param {string} options.name - 장소명
  * @param {number} options.placeType - 장소 타입 (PlaceType 상수 사용)
  * @param {number} options.referenceId - 원본 콘텐츠 ID
+ * @param {string} [options.locationName] - 위치명 (영어)
+ * @param {string} [options.address] - 주소 (영어)
+ * @param {string} [options.category] - 카테고리 (영어)
+ * @param {string} [options.keyword] - 키워드 (영어)
+ * @param {string} [options.tripTipEn] - 여행 팁 (영어)
  * @param {number} [options.latitude] - 위도
  * @param {number} [options.longitude] - 경도
  * @param {string} [options.imageUrl] - 이미지 URL
  * @param {string} [options.notes] - 메모
  * @returns {Promise<Object>} 생성된 북마크
- * 
- * @example
- * // K-콘텐츠 북마크 추가
- * await addBookmark({
- *   userId: 3,
- *   name: "남산타워",
- *   placeType: PlaceType.KCONTENT,
- *   referenceId: 123,
- *   imageUrl: "https://..."
- * });
  */
 export const addBookmark = async ({
     userId,
     name,
     placeType,
     referenceId,
+    locationName = null,
+    address = null,
+    category = null,
+    keyword = null,
+    tripTipEn = null,
     latitude = null,
     longitude = null,
     imageUrl = null,
@@ -181,12 +99,19 @@ export const addBookmark = async ({
             name: name,
             place_type: placeType,
             reference_id: referenceId,
+            location_name: locationName,
+            address: address,
+            category: category,
+            keyword: keyword,
+            trip_tip_en: tripTipEn,
             latitude: latitude,
             longitude: longitude,
             image_url: imageUrl,
             notes: notes,
             extracted_from_convers_id: 0
         };
+
+        console.log('📤 요청 데이터:', body);
 
         const response = await fetch(`${API_BASE}/bookmark`, {
             method: 'POST',
@@ -241,6 +166,37 @@ export const deleteBookmark = async (bookmarkId, userId) => {
 };
 
 /**
+ * 📊 추천을 위한 reference_id 목록 조회
+ * @param {number} userId - 사용자 ID
+ * @param {number} [placeType] - 필터링할 place_type (선택)
+ * @returns {Promise<Array>} reference_id 목록
+ */
+export const getReferenceIds = async (userId, placeType = null) => {
+    try {
+        let url = `${API_BASE}/bookmark/${userId}/reference-ids`;
+        if (placeType !== null) {
+            url += `?place_type=${placeType}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            throw new Error(`reference_id 조회 실패: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ reference_id 조회 성공:', data.reference_ids);
+        return data.reference_ids;
+    } catch (error) {
+        console.error('❌ reference_id 조회 에러:', error);
+        throw error;
+    }
+};
+
+/**
  * 👤 사용자 정보 조회
  * @returns {Promise<Object>} 사용자 정보
  */
@@ -276,10 +232,3 @@ export const getCurrentUser = async () => {
         return null;
     }
 };
-
-// export const PlaceType = {
-//     ATTRACTION: 1,   // 명소
-//     KCONTENT: 3,     // K-콘텐츠
-//     RESTAURANT: 0,   // 음식
-//     FESTIVAL: 2      // 페스티벌
-// };
