@@ -6,13 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
 # ✅ 기존 엔드포인트 라우터
-from app.api.endpoints import auth, chat, destinations, festival, map_search, odsay, concert
+from app.api.endpoints import auth, chat, destinations, festival, map_search, odsay, concert, bookmark, recommend, recommend_llm
 # ✅ 추가: KContent 라우터
 from app.api.endpoints import kcontent
 
 # ✅ 추가: Schedules 라우터
 from app.api.endpoints.schedule import router as schedules_router
 from app.api.endpoints.kmedia import router as kmedia_router
+from app.api.endpoints.restaurant import router as restaurant_router
+
 # FastAPI 앱 생성
 app = FastAPI(
     title="Travel Planner API",
@@ -46,6 +48,10 @@ app.include_router(odsay.router)
 app.include_router(concert.router, prefix="/api")
 app.include_router(kcontent.router, prefix="/api") # ✅ K-Content API 라우터 등록
 app.include_router(kmedia_router)
+app.include_router(restaurant_router)
+app.include_router(bookmark.router, prefix="/api")
+app.include_router(recommend.router, prefix="/api")
+app.include_router(recommend_llm.router, prefix="/api")
 
 # -------------------------------
 # Health Check

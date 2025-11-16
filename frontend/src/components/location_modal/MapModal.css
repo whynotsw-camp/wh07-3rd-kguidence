@@ -57,7 +57,6 @@
 
 /* 지도 표시 영역 컨테이너 */
 .map-container {
-    margin: 20px 0;
     border-radius: 8px;
     overflow: hidden;
     height: 350px; /* 지도 표시 영역 높이 고정 */

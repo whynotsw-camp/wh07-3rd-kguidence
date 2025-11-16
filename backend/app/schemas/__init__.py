@@ -1,3 +1,5 @@
+# backend/app/schemas/__init__.py
+
 # User 스키마들
 from .user_schema import (
     UserBase,
@@ -8,7 +10,7 @@ from .user_schema import (
     TokenData
 )
 
-# Destination 스키마들  
+# Destination 스키마들  
 from .destination_schema import (
     DestinationBase,
     DestinationCreate,
@@ -49,11 +51,32 @@ from .concert_schema import (
 
 from .schedule_schema import ScheduleEdit, ScheduleResponse
 
-# KContent 스키마들 <- 새로 추가
+# KContent 스키마들
 from .kcontent_schema import (
     KContentCreate,
     KContentEdit,
     KContentResponse
+)
+
+from .schedule_table_meta_schema import (
+    ScheduleTableRowData, 
+    UpdateScheduleTableRequest, 
+    ScheduleTableDataResponse
+)
+
+# ✅ 북마크 스키마 (BookmarkBase 제거!)
+from .bookmarkschema import (
+    PlaceType,              # ✅ 추가
+    BaseResponse,
+    BookmarkCreate,
+    BookmarkListResponse,
+    BookmarkForRecommend,   # ✅ 추가
+)
+
+from .recommend_schema import (
+    BookmarkBasedRecommendRequest,
+    RecommendedItem,
+    BookmarkBasedRecommendResponse,
 )
 
 __all__ = [
@@ -61,7 +84,7 @@ __all__ = [
     "UserBase", "UserCreate", "UserResponse", 
     "UserLogin", "Token", "TokenData",
     
-    # Destination  
+    # Destination  
     "DestinationBase", "DestinationCreate",
     "DestinationResponse", "DestinationFromConversation",
     "DestinationAddRequest", "DestinationAddResponse",
@@ -70,11 +93,10 @@ __all__ = [
     "ConversationBase", "ConversationCreate", 
     "ConversationResponse", "ChatMessage", "ChatResponse",
     
-      # Concert
+    # Concert
     "ConcertBase", "ConcertCreate", "ConcertUpdate", "ConcertResponse",
     "ConcertSummary", "ConcertsResponse", "OngoingConcertsResponse",
     "ConcertSearch", "ConcertDateRange",
-
     
     # Festival
     "FestivalBase", "FestivalResponse", "FestivalCard", "MapMarker",
@@ -82,6 +104,21 @@ __all__ = [
     # Schedule
     "ScheduleEdit", "ScheduleResponse",
 
-    # KContent <- 새로 추가
-    "KContentCreate", "KContentEdit", "KContentResponse"
+    # KContent
+    "KContentCreate", "KContentEdit", "KContentResponse",
+    
+    # Schedule Table
+    "ScheduleTableRowData", "UpdateScheduleTableRequest", "ScheduleTableDataResponse",
+
+    # ✅ Bookmark (BookmarkBase 제거, PlaceType 추가)
+    "PlaceType",            # ✅ 추가
+    "BaseResponse",
+    "BookmarkCreate",
+    "BookmarkListResponse",
+    "BookmarkForRecommend", # ✅ 추가
+    
+    # Recommend
+    "BookmarkBasedRecommendRequest",
+    "RecommendedItem",
+    "BookmarkBasedRecommendResponse",
 ]

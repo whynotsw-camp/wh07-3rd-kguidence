@@ -3,7 +3,7 @@
 /* 전체 컨테이너 스타일 */
 .kschedule-container {
     max-width: 1000px;
-    margin: 30px auto;
+    margin: 0px auto;
     padding: 25px;
     border-radius: 8px;
     background-color: rgba(255, 255, 255, 0.1);
@@ -11,15 +11,36 @@
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* 1. 헤더 */
+.kschedule-header {
+    /* 배경색과 패딩 등을 이곳에 추가 (이미지에서 보이는 스타일) */
+    padding: 15px 20px; 
+
+    /* 핵심 수정: 부모를 Flex 컨테이너로 만듭니다. */
+    display: flex; 
+    
+    /* 제목(h1)과 버튼을 양쪽 끝으로 벌립니다. */
+    justify-content: space-between; 
+    
+    /* 수직(세로) 중앙 정렬 */
+    align-items: center; 
+}
+
+/* 2. h1 스타일 수정 및 불필요한 속성 제거 */
 .kschedule-header h1 {
     font-size: 24px;
     font-weight: 600;
     color: #fdf5f5;
-    display: flex;
-    align-items: center;
+    
+    /* ❌ 여기서는 justify-content 등을 제거합니다. */
+    /* h1 내부의 아이콘과 텍스트 정렬은 유지 */
+    display: flex; 
+    align-items: center; 
     gap: 10px;
-    margin-bottom: 20px;
+    
+    /* 이전에 h1에 적용했던 패딩과 정렬 속성은 .kschedule-header로 이동했으므로 제거합니다. */
+    /* margin-bottom이나 padding도 불필요하면 제거합니다. */
+    padding: 0; 
+    margin: 0;
 }
 
 /* 3. Day Title + Description 그룹 박스 (Flexbox 적용) */
@@ -385,4 +406,24 @@
 /* 드래그 중인 열 헤더 (th)가 table-cell 속성을 유지하도록 보장 */
 .kschedule-table thead th {
     display: table-cell !important;
+}
+
+.kschedule-btn-success_ok {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex; 
+    align-items: center;
+    
+    /* ❌ 수정 전: justify-content: flex-start; 또는 center; */
+    /* ✅ 수정 후: 내용을 끝점(오른쪽)으로 정렬 */
+    justify-content: flex-end; /* 이 속성을 flex-end로 변경 */
+    margin-left: auto;
+    gap: 5px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    transition: background-color 0.2s, transform 0.1s;
 }

@@ -5,7 +5,7 @@ import { Search, MapPin, Loader, BusFront, Clock, Wallet, Route, Trash2 } from '
 import '../styles/KPathIdeaPage.css';
 import SubPathItem from '../components/kpathidea/SubPathItem';
 import { readLat, readLng } from '../components/kpathidea/mapUtils';
-import useMapLogic from '../components/kpathidea/useMapLogic';
+import  useMapLogic from '../components/kpathidea/useMapLogic';
 import MemoModal from '../components/kpathidea/MemoModal'; 
 
 // API 및 환경 변수 설정

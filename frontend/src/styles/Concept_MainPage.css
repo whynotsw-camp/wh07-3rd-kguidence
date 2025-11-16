@@ -48,7 +48,7 @@ html, body {
 }
 
 
-.welcome-title {
+.main-welcome-title {
     font-size: 60px;
     font-weight: bold;
     text-align: center;
@@ -573,12 +573,12 @@ html, body {
     .main-content-area {
         padding: 30px 20px;
     }
-    .welcome-title { font-size: 45px; }
+    .main-welcome-title { font-size: 45px; }
     .welcome-text { font-size: 22px; }
 }
 
 @media (max-width: 480px) {
-    .welcome-title { font-size: 36px; }
+    .main-welcome-title { font-size: 36px; }
     .welcome-text { font-size: 16px; }
     .concept-prompt { font-size: 20px; }
     .concept-card-link { height: 250px; } 

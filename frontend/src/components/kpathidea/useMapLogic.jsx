@@ -1,16 +1,7 @@
-// src/components/kpathidea/useMapLogic.jsx
-
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { isNaverMapsLoaded, readLat, readLng } from './mapUtils'; 
-// 💡 이미지 import는 그대로 유지
-import DefaultMarker from '../../assets/start_marker.png';
-// StartMarker, EndMarker는 임시로 DefaultMarker로 선언합니다.
-const StartMarker = DefaultMarker;
-const EndMarker = DefaultMarker;
+import { readLat, readLng } from './mapUtils'; 
+import { createCustomMarkerHTML } from './markerConfig';
 
-/**
- * Naver Map 관련 모든 상태, 초기화, 마커/경로 조작 로직을 캡슐화하는 커스텀 훅입니다.
- */
 const useMapLogic = (
     NAVER_MAPS_CLIENT_ID, 
     setMessage, 
@@ -20,32 +11,28 @@ const useMapLogic = (
     setUserMarkers, 
     setSelectedStartId, 
     setSelectedEndId, 
-    stateRef, // KPathIdeaPage의 모든 current state를 참조
-    fetchRouteRef, // 💡 fetchRoute 함수 참조 (Ref)를 받습니다.
-    openMemoModal, // 💡 마커 메모 모달을 띄우는 함수
-    markerMemos     // 💡 [추가] KPathIdeaPage에서 전달받은 마커 메모 상태
+    stateRef,
+    fetchRouteRef,
+    openMemoModal,
+    markerMemos
 ) => {
-    // 💡 훅 내부 상태 관리
     const [map, setMap] = useState(null);
     const [isApiLoaded, setIsApiLoaded] = useState(false);
     
-    // 💡 마커/인스턴스 참조 관리
     const mapObjectsRef = useRef({}); 
-    const prevUserMarkersIdsRef = useRef(''); // 폴링용 이전 아이디 문자열
 
-    // --- 1. API 로드 및 지도 초기화 로직 (유지) ---
+    // API 로드
     useEffect(() => {
-        // ... (API 로드 및 초기화 로직 유지)
         if (!NAVER_MAPS_CLIENT_ID) {
-            setMessage("⚠️ 오류: REACT_APP_NAVER_MAPS_CLIENT_ID 환경 변수가 설정되지 않았습니다.");
+            setMessage("⚠️ NAVER_MAPS_CLIENT_ID가 없습니다.");
             return;
         }
         if (window.naver && window.naver.maps && !isApiLoaded) {
             setIsApiLoaded(true);
-            setMessage("Naver Maps API already Load");
             return;
         }
         if (isApiLoaded) return;
+        
         const scriptId = 'naver-maps-script';
         if (document.getElementById(scriptId)) return;
 
@@ -58,51 +45,48 @@ const useMapLogic = (
             if (window.naver && window.naver.maps) {
                 setIsApiLoaded(true); 
                 setMessage("Naver Maps API Load success.");
-            } else {
-                setMessage("⚠️ Naver Maps 스크립트 로드되었으나 window.naver가 준비되지 않았습니다.");
             }
         };
         script.onerror = () => { setMessage('⚠️ Naver Maps API 로드 실패.'); };
         document.head.appendChild(script);
     }, [isApiLoaded, NAVER_MAPS_CLIENT_ID, setMessage]);
 
+    // 지도 초기화
     const initMap = useCallback(() => {
         if (!isApiLoaded || map) return;
         if (!window.naver || !window.naver.maps) return;
 
         const initialCenter = new window.naver.maps.LatLng(37.5665, 126.9780);
         const newMap = new window.naver.maps.Map('map', {
-            center: initialCenter, zoom: 10, minZoom: 6, mapTypeControl: true, scaleControl: true,
+            center: initialCenter, 
+            zoom: 10, 
+            minZoom: 6, 
+            mapTypeControl: true, 
+            scaleControl: true,
         });
         setMap(newMap);
-    }, [isApiLoaded, map, setMap]);
+    }, [isApiLoaded, map]);
 
     useEffect(() => { initMap(); }, [initMap]);
-    useEffect(() => { 
-        if (map) { 
-            setTimeout(() => { try { map.refresh(); } catch(e){} }, 100); 
-        } 
-    }, [map]);
 
-
-    // --- 2. 지도 조작 함수들 (clearRoute, handleDeleteMarker, drawSegmentedPolyline 유지) ---
-
+    // 경로 지우기
     const clearRoute = useCallback(() => {
         const currentPolylines = stateRef.current.routePolyline;
         if (currentPolylines) {
-             if (Array.isArray(currentPolylines)) {
-                 currentPolylines.forEach(line => {
-                     try { if (line && typeof line.setMap === 'function') line.setMap(null); } catch (e) {}
-                 });
-             } else {
-                 try { if (currentPolylines && typeof currentPolylines.setMap === 'function') currentPolylines.setMap(null); } catch(e){}
-             }
+            if (Array.isArray(currentPolylines)) {
+                currentPolylines.forEach(line => {
+                    try { if (line && line.setMap) line.setMap(null); } catch (e) {}
+                });
+            } else {
+                try { if (currentPolylines && currentPolylines.setMap) currentPolylines.setMap(null); } catch(e){}
+            }
         }
         setRoutePolyline(null); 
         setRouteResult(null); 
         setIsSummaryVisible(false);
     }, [setRoutePolyline, setRouteResult, setIsSummaryVisible, stateRef]);
 
+    // 마커 삭제
     const handleDeleteMarker = useCallback((markerId) => {
         if (mapObjectsRef.current[markerId]) {
             try { mapObjectsRef.current[markerId].setMap(null); } catch(e){}
@@ -112,184 +96,114 @@ const useMapLogic = (
         setUserMarkers(prev => prev.filter(m => m.id !== markerId));
         setSelectedStartId(prev => prev === markerId ? null : prev);
         setSelectedEndId(prev => prev === markerId ? null : prev);
-
         clearRoute();
-        setMessage('🗑️ The marker has been deleted. Please set the departure/arrival points again.');
-    }, [clearRoute, setMessage, mapObjectsRef, setUserMarkers, setSelectedStartId, setSelectedEndId]);
+    }, [clearRoute, setUserMarkers, setSelectedStartId, setSelectedEndId]);
 
+    // 경로 그리기
     const drawSegmentedPolyline = useCallback((segmentedPathData, routeData) => {
         if (!map) return;
         clearRoute();
-        // ... (경로 그리기 로직 유지)
+
         if (!Array.isArray(segmentedPathData) || segmentedPathData.length === 0) {
-             setMessage('⚠️ There is no path data to draw.');
-             setIsSummaryVisible(false);
-             return;
+            setIsSummaryVisible(false);
+            return;
         }
 
         const colorMap = { 1: '#4c42f7', 2: '#f59e0b', 3: '#a8a29e' };
         const newPolylines = [];
-        let bounds;
-        try { bounds = new window.naver.maps.LatLngBounds(); } catch (e) { bounds = null; console.warn('LatLngBounds 생성 실패', e); }
 
         segmentedPathData.forEach(segment => {
-             const coords = Array.isArray(segment.coordinates) ? segment.coordinates : [];
-             if (coords.length < 2) return;
+            const coords = Array.isArray(segment.coordinates) ? segment.coordinates : [];
+            if (coords.length < 2) return;
 
-             const naverPath = [];
-             coords.forEach(p => {
-                 const lat = readLat(p);
-                 const lng = readLng(p);
-                 if (typeof lat === 'number' && typeof lng === 'number') {
-                     const latLng = new window.naver.maps.LatLng(lat, lng);
-                     naverPath.push(latLng);
-                     try { if (bounds && typeof bounds.extend === 'function') bounds.extend(latLng); } catch(e){}
-                 }
-             });
+            const naverPath = coords.map(p => {
+                const lat = readLat(p);
+                const lng = readLng(p);
+                return new window.naver.maps.LatLng(lat, lng);
+            }).filter(Boolean);
 
-             if (naverPath.length < 2) return;
-             const color = colorMap[segment.trafficType] || '#3b82f6';
-             const polyline = new window.naver.maps.Polyline({ map: map, path: naverPath, strokeColor: color, strokeWeight: 7, strokeOpacity: 0.8, strokeStyle: 'solid' });
+            if (naverPath.length < 2) return;
+            
+            const color = colorMap[segment.trafficType] || '#3b82f6';
+            const polyline = new window.naver.maps.Polyline({ 
+                map, 
+                path: naverPath, 
+                strokeColor: color, 
+                strokeWeight: 7, 
+                strokeOpacity: 0.8
+            });
 
-             window.naver.maps.Event.addListener(polyline, 'click', () => {
-                 setIsSummaryVisible(prev => !prev);
-                 setMessage(stateRef.current.isSummaryVisible ? '경로 요약 정보를 숨깁니다.' : `🚌 경로를 클릭했습니다! 총 ${routeData.totalTime ?? '?'}분 경로입니다. 상세 정보를 확인하세요.`);
-             });
-             newPolylines.push(polyline);
+            newPolylines.push(polyline);
         });
         
         setRouteResult(routeData);
         setRoutePolyline(newPolylines); 
         setIsSummaryVisible(true);
-        setMessage('✅ The route has been created. (Section-specific color distinctions applied)');
-        
-         try {
-             if (bounds && typeof bounds.isEmpty === 'function' && !bounds.isEmpty()) {
-                 if (typeof map.fitBounds === 'function') {
-                     try { map.fitBounds(bounds); } catch (e) { map.setCenter(bounds.getCenter()); }
-                 }
-             } else if (newPolylines.length > 0) {
-                 const firstPath = newPolylines[0].getPath && newPolylines[0].getPath();
-                 if (firstPath && firstPath.length > 0) { try { map.setCenter(firstPath[0]); } catch(e){} }
-             }
-         } catch (e) { console.warn('fitBounds 처리 중 예외:', e); }
+    }, [map, clearRoute, setRouteResult, setRoutePolyline, setIsSummaryVisible]);
 
-    }, [map, clearRoute, setRouteResult, setRoutePolyline, setIsSummaryVisible, setMessage, stateRef]);
-
-
-    // 2.4. 마커 생성 및 클릭 리스너 등록 로직 (createMarkerObject)
+    // 마커 생성
     const createMarkerObject = useCallback((markerData, isStart, isEnd) => {
         if (!map) return null;
 
-        const { id, name } = markerData;
-        const latRaw = readLat(markerData);
-        const lngRaw = readLng(markerData);
-        const lat = Number(latRaw);
-        const lng = Number(lngRaw);
+        const { id, name, place_type = 0 } = markerData;
+        const lat = Number(readLat(markerData));
+        const lng = Number(readLng(markerData));
+        
         if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
         
-        // 💡 메모 데이터 및 표시 타이틀 가져오기
         const currentMemo = markerMemos[id] || { title: name, memo: '' };
         const displayTitle = currentMemo.title || name; 
         const displayMemo = currentMemo.memo;
         const hasMemo = displayMemo && displayMemo.trim().length > 0;
-        
-        // 💡 마커 이미지 경로 설정
-        const markerImage = isStart 
-             ? StartMarker
-             : isEnd 
-             ? EndMarker
-             : DefaultMarker;
 
-        // --- Custom HTML 마커 구조 정의 (핵심 수정) ---
-        const markerColor = isStart ? '#4CAF50' : isEnd ? '#F44336' : '#3b82f6';
-
-        const markerHtml = `
-            <div class="kpath-custom-marker-wrapper" data-marker-id="${id}">
-                
-           ${hasMemo ? `
-    <div class="kpath-marker-memo marker-${id}">
-        ${displayMemo.replace(/\n/g, '<br>')} 
-        </div>
-    ` : ''}
-
-                <div class="kpath-marker-label label-${id}" style="
-                    /* 💡 라벨 색상 커스터마이징을 위해 인라인 스타일 일부만 유지 */
-                    border-color: ${markerColor};
-                ">
-                    ${displayTitle}
-                </div>
-
-                <img 
-                    src="${markerImage}" 
-                    alt="${displayTitle}" 
-                    class="kpath-marker-img img-${id}"
-                />
-                
-                </div>
-`;
-        // --- Custom HTML 마커 구조 정의 끝 ---
+        const markerHtml = createCustomMarkerHTML({
+            placeType: place_type,
+            name: displayTitle,
+            markerId: id,
+            isStart,
+            isEnd,
+            hasMemo,
+            memoContent: displayMemo
+        });
 
         const position = new window.naver.maps.LatLng(lat, lng);
-        const anchorPoint = new window.naver.maps.Point(15, 42); // 30x42 마커의 핀 끝에 맞춤
 
         let marker = mapObjectsRef.current[id]; 
         if (!marker) {
-            try {
-                // 💡 Custom HTML Marker 생성
-                marker = new window.naver.maps.Marker({ 
-                    position, map, title: displayTitle, 
-                    icon: { 
-                        content: markerHtml, // Custom HTML 적용
-                        size: new window.naver.maps.Size(30, 42),
-                        anchor: anchorPoint 
-                    }, 
-                    zIndex: isStart || isEnd ? 10 : 1 
-                });
-                mapObjectsRef.current[id] = marker;
-            } catch (e) { console.warn('마커 생성 실패', e); return null; }
-        } else {
-            try { 
-                marker.setPosition(position); 
-                marker.setTitle(displayTitle); // title 업데이트
-                // 💡 Custom HTML Icon 업데이트
-                marker.setIcon({ 
+            marker = new window.naver.maps.Marker({ 
+                position, 
+                map, 
+                icon: { 
                     content: markerHtml,
-                    size: new window.naver.maps.Size(30, 42),
-                    anchor: anchorPoint 
-                });
-                marker.setOptions({ zIndex: isStart || isEnd ? 10 : 1 });
-                try { marker.setMap(map); } catch(e2){ /* 무시 */ }
-            } catch (e) { console.warn(e); }
+                    anchor: new window.naver.maps.Point(20, 40)
+                }, 
+                zIndex: isStart || isEnd ? 10 : 1 
+            });
+            mapObjectsRef.current[id] = marker;
+        } else {
+            marker.setPosition(position); 
+            marker.setIcon({ 
+                content: markerHtml,
+                anchor: new window.naver.maps.Point(20, 40)
+            });
         }
         
-        // ----------------------------------------------------------------------
-        // 💡 이벤트 리스너: 더블 클릭 (메모 모달 열기)
-        // ----------------------------------------------------------------------
-        
+        // 이벤트 리스너
         window.naver.maps.Event.addListener(marker, 'dblclick', () => {
-             // 메모 모달 열기 함수 호출 시 현재 표시 이름과 마커 ID 전달
-             openMemoModal({ id, name: displayTitle, lat, lng }); 
-             setMessage(`📝 '${displayTitle}' The marker information input/edit window has opened.`);
+            openMemoModal({ id, name: displayTitle, lat, lng }); 
         });
 
-        // ----------------------------------------------------------------------
-        // 💡 이벤트 리스너: 단일 클릭 (경로 선택 로직)
-        // ----------------------------------------------------------------------
         window.naver.maps.Event.addListener(marker, 'click', () => {
             if (stateRef.current.isSelectingPath) {
                 const clickedId = markerData.id;
-                let startId = stateRef.current.selectedStartId;
+                const startId = stateRef.current.selectedStartId;
 
                 if (!startId) {
                     setSelectedStartId(clickedId);
-                    setMessage(`1️⃣ Departure point: ${displayTitle} set. 🎯 2. Click your destination..`);
                 } else if (startId === clickedId) {
                     setSelectedStartId(null);
-                    setMessage(`The departure location selection has been canceled. Please click 1. Departure Location again.`);
                 } else {
                     setSelectedEndId(clickedId);
-                    setMessage(`2️⃣ Destination: ${displayTitle} set. Starting route generation.`);
                     
                     const startMarkerData = stateRef.current.userMarkers.find(m => m.id === startId);
                     const endMarkerData = stateRef.current.userMarkers.find(m => m.id === clickedId);
@@ -303,34 +217,26 @@ const useMapLogic = (
                         );
                     }
                 }
-                return;
             }
         });
 
         return marker;
-    }, [map, handleDeleteMarker, fetchRouteRef, setSelectedStartId, setSelectedEndId, setMessage, stateRef, openMemoModal, markerMemos]); // 💡 markerMemos를 의존성 배열에 추가
+    }, [map, fetchRouteRef, setSelectedStartId, setSelectedEndId, stateRef, openMemoModal, markerMemos]);
 
-
-    // --- 3. 마커 동기화 및 지도 이벤트 (유지) ---
-
-    // syncMarkers 함수로 분리 (재사용)
+    // 마커 동기화
     const syncMarkers = useCallback(() => {
         if (!map || !stateRef.current) return;
         const currentMarkers = stateRef.current.userMarkers || [];
         const currentIds = currentMarkers.map(m => m.id);
 
-        // 지도에 없어야 할 마커 삭제
         Object.keys(mapObjectsRef.current).forEach(key => {
             const numericId = Number(key);
-            if (!Number.isNaN(numericId)) {
-                if (!currentIds.includes(numericId)) {
-                    try { if (mapObjectsRef.current[key]) { mapObjectsRef.current[key].setMap(null); } } catch(e){}
-                    delete mapObjectsRef.current[key];
-                }
+            if (!Number.isNaN(numericId) && !currentIds.includes(numericId)) {
+                try { mapObjectsRef.current[key].setMap(null); } catch(e){}
+                delete mapObjectsRef.current[key];
             }
         });
 
-        // 지도에 그려야 할 마커 생성/업데이트
         currentMarkers.forEach(markerData => {
             const isStart = markerData.id === stateRef.current.selectedStartId;
             const isEnd = markerData.id === stateRef.current.selectedEndId;
@@ -338,20 +244,17 @@ const useMapLogic = (
         });
     }, [map, createMarkerObject, stateRef]);
 
-    // **변경**: stateRef.current.userMarkers 변경을 감지하기 위한 경량 폴링
-   useEffect(() => {
+    useEffect(() => {
         if (!map) return;
-       syncMarkers();
-   }, [map, syncMarkers, markerMemos, stateRef.current?.userMarkers]);
+        syncMarkers();
+    }, [map, syncMarkers, markerMemos, stateRef.current?.userMarkers]);
 
     return {
         map,
-        setMap,
         isApiLoaded,
         clearRoute, 
         handleDeleteMarker, 
         drawSegmentedPolyline,
-        createMarkerObject,
         mapObjectsRef 
     };
 };

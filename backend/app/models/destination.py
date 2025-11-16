@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship, Session
 from sqlalchemy.exc import SQLAlchemyError
 from app.database.connection import Base
 from typing import Optional
+from sqlalchemy import Column, JSON
 
 class Destination(Base):
     __tablename__ = "destinations"
@@ -26,6 +27,7 @@ class Destination(Base):
     schedule_id = Column(Integer, ForeignKey("schedules.schedule_id"), nullable=False)
     visit_order = Column(Integer, nullable=True)
     notes = Column(Text, nullable=True)
+    custom_fields = Column(JSON, nullable=True)  # 🆕 추가
     
     def __repr__(self):
         return f"<Destination(destination_id={self.destination_id}, name='{self.name}', user_id={self.user_id})>"
