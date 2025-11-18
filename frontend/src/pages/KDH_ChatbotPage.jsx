@@ -5,10 +5,10 @@ import ChatInput from '../components/chat/ChatInput';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-
 function KDH_ChatbotPage() {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [isKContentMode, setIsKContentMode] = useState(true); // 🎬 K-Content 모드 (기본 true)
     const messagesEndRef = useRef(null);
 
     // 🎭 Demon Hunters 전설의 장소들
@@ -65,14 +65,68 @@ function KDH_ChatbotPage() {
             emoji: "✨",
             image: "https://kride.blog/wp-content/uploads/2025/09/1750615211_youloveit_com_kpop_demon_hunters_saja-boys.jpg?w=870",
             tooltip: "'Crystal Light' MV shopping district!",
-            searchQuery: "Tell me about Myeongdong"
+            searchQuery: "Tell me about Myeongdong Cathedral"
         }
     ];
+
+    // 🎯 카드 hover 핸들러 - 마커 정보창 표시
+    const handleCardMouseEnter = (itemData, itemType) => {
+        const itemId = getItemId(itemData, itemType);
+        console.log('🎯 Card hover enter:', itemId, itemType);
+        
+        if (window.showMarkerInfo) {
+            window.showMarkerInfo(itemId, itemType);
+        }
+    };
+
+    // 🎯 카드 hover 해제 핸들러 - 마커 정보창 숨기기
+    const handleCardMouseLeave = (itemData, itemType) => {
+        const itemId = getItemId(itemData, itemType);
+        console.log('🎯 Card hover leave:', itemId, itemType);
+        
+        if (window.hideMarkerInfo) {
+            window.hideMarkerInfo(itemId);
+        }
+    };
+
+    // 🎯 아이템 ID 추출 함수
+    const getItemId = (itemData, itemType) => {
+        if (itemType === 'attraction') {
+            return itemData.attr_id;
+        } else if (itemType === 'festival') {
+            return itemData.festival_id;
+        } else if (itemType === 'restaurant') {
+            return itemData.restaurant_id || itemData.id;
+        } else if (itemType === 'kcontent') {
+            return itemData.content_id || itemData.id;
+        } else {
+            return itemData.id;
+        }
+    };
 
     // 장소 카드 클릭 핸들러
     const handleLocationClick = (location) => {
         handleSendMessage(location.searchQuery);
     };
+
+    // 🆕 카드 클릭 핸들러 (다중 검색 결과용)
+    const handleCardClick = (locationName) => {
+        const query = `tell me about ${locationName}`;
+        handleSendMessage(query);
+    };
+
+    // 전역으로 노출 (ChatMessage에서 사용)
+    useEffect(() => {
+        window.handleCardClick = handleCardClick;
+        window.handleCardMouseEnter = handleCardMouseEnter; // 🎯 전역 함수로 노출
+        window.handleCardMouseLeave = handleCardMouseLeave; // 🎯 전역 함수로 노출
+        
+        return () => {
+            delete window.handleCardClick;
+            delete window.handleCardMouseEnter;
+            delete window.handleCardMouseLeave;
+        };
+    }, []);
 
     useEffect(() => {
         // 초기에는 메시지 없음 (Welcome 화면 표시)
@@ -122,7 +176,10 @@ function KDH_ChatbotPage() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${sessionId}`
                 },
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({ 
+                    message: text,
+                    is_kcontent_mode: isKContentMode  // 🎬 K-Content 모드 파라미터 추가
+                })
             });
 
             if (!response.ok) {
@@ -192,6 +249,30 @@ function KDH_ChatbotPage() {
                                     ));
                                     break;
 
+                                case 'multiple_locations':  // 🆕 다중 위치 검색 케이스
+                                    setMessages(prev => prev.map(msg => 
+                                        msg.id === aiMessageId 
+                                            ? { 
+                                                ...msg,
+                                                text: data.full_response,
+                                                isStreaming: false,
+                                                locationCards: data.location_cards,  // 🎨 카드 데이터
+                                                totalCount: data.total_count,
+                                                dramaName: data.drama_name,
+                                                hasKcontents: data.has_kcontents
+                                              }
+                                            : msg
+                                    ));
+                                    setLoading(false);
+                                    
+                                    // 지도 마커 추가
+                                    if (data.map_markers && data.map_markers.length > 0) {
+                                        if (window.addMapMarkers) {
+                                            window.addMapMarkers(data.map_markers);
+                                        }
+                                    }
+                                    break;
+
                                 case 'done':
                                     setMessages(prev => prev.map(msg => 
                                         msg.id === aiMessageId 
@@ -203,8 +284,12 @@ function KDH_ChatbotPage() {
                                                 results: data.results || (data.result ? [data.result] : []),
                                                 festivals: data.festivals || [],
                                                 attractions: data.attractions || [],
+                                                restaurants: data.restaurants || [], // 🍽️ 레스토랑 추가
+                                                kcontents: data.kcontents || [], // 🎬 K-Content 추가
                                                 hasFestivals: data.has_festivals,
-                                                hasAttractions: data.has_attractions
+                                                hasAttractions: data.has_attractions,
+                                                hasRestaurants: data.has_restaurants, // 🍽️ 레스토랑 존재 여부
+                                                hasKcontents: data.has_kcontents // 🎬 K-Content 존재 여부
                                               }
                                             : msg
                                     ));
@@ -221,6 +306,14 @@ function KDH_ChatbotPage() {
                                             if (data.has_attractions && window.addAttractionMarkers) {
                                                 const attractionMarkers = data.map_markers.filter(m => m.type === 'attraction');
                                                 window.addAttractionMarkers(attractionMarkers);
+                                            }
+                                            if (data.has_restaurants && window.addRestaurantMarkers) {
+                                                const restaurantMarkers = data.map_markers.filter(m => m.type === 'restaurant');
+                                                window.addRestaurantMarkers(restaurantMarkers);
+                                            }
+                                            if (data.has_kcontents && window.addKcontentMarkers) {
+                                                const kcontentMarkers = data.map_markers.filter(m => m.type === 'kcontent');
+                                                window.addKcontentMarkers(kcontentMarkers);
                                             }
                                         }
                                     }
@@ -282,6 +375,20 @@ function KDH_ChatbotPage() {
                     <span className="kdh-header-back-icon">←</span>
                     <span className="kdh-chat-title">K-POP DEMON HUNTERS</span>
                     <span className="kdh-subtitle">Trip Planning Assistant</span>
+                    {/* 🎬 K-Content 모드 토글 */}
+                    <div className="kcontent-mode-toggle">
+                        <label className="toggle-switch">
+                            <input 
+                                type="checkbox" 
+                                checked={isKContentMode}
+                                onChange={(e) => setIsKContentMode(e.target.checked)}
+                            />
+                            <span className="toggle-slider"></span>
+                        </label>
+                        <span className="toggle-label">
+                            {isKContentMode ? '🎬 K-Drama Mode' : '🏛️ General Mode'}
+                        </span>
+                    </div>
                 </header>
 
                 <section className="kdh-message-area">
@@ -400,4 +507,3 @@ function KDH_ChatbotPage() {
 }
 
 export default KDH_ChatbotPage;
-

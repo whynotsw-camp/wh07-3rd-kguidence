@@ -14,7 +14,6 @@ from typing import List
 from app.database.connection import get_db
 from app.services.chat_service import ChatService
 from app.services.chat_rest import ChatRestService  # 🍽️
-from app.services.chat_kcontents import ChatKContentsService  # 🎬 새로 추가
 from app.schemas import ChatMessage
 from app.core.deps import get_current_user
 
@@ -49,7 +48,8 @@ async def send_message(
         result = ChatService.send_message(
             db=db,
             user_id=current_user['user_id'],
-            message=request.message
+            message=request.message,
+            is_kcontent_mode=False
         )
         
         return result
@@ -80,11 +80,11 @@ async def send_message_streaming(
     data: {"type": "done", "full_response": "...", "result": {...}}
     """
     try:
-        # 🎯 서비스 레이어로 완전히 위임
         stream_generator = ChatService.send_message_streaming(
             db=db,
             user_id=current_user['user_id'],
-            message=request.message
+            message=request.message,
+            is_kcontent_mode=False
         )
         
         return StreamingResponse(
@@ -154,7 +154,6 @@ async def send_restaurant_message_streaming(
     data: {"type": "done", "full_response": "...", "result": {...}}
     """
     try:
-        # 🎯 레스토랑 서비스 레이어로 완전히 위임
         stream_generator = ChatRestService.send_message_streaming(
             db=db,
             user_id=current_user['user_id'],
@@ -175,7 +174,7 @@ async def send_restaurant_message_streaming(
         raise HTTPException(status_code=500, detail=f"레스토랑 스트리밍 오류: {str(e)}")
 
 
-# ===== 🎬 K-Contents 서비스 (NEW!) =====
+# ===== 🎬 K-Contents 서비스 =====
 
 @router.post("/kcontents/send")
 async def send_kcontent_message(
@@ -184,7 +183,7 @@ async def send_kcontent_message(
     db: Session = Depends(get_db)
 ):
     """
-    🎬 K-Drama/K-Content 메시지 전송 - 일반 방식 (NEW!)
+    🎬 K-Drama/K-Content 메시지 전송 - 일반 방식
     K-Drama 촬영지 정보 서비스 (K-Contents Only)
     
     응답 형식:
@@ -197,10 +196,11 @@ async def send_kcontent_message(
     }
     """
     try:
-        result = ChatKContentsService.send_message(
+        result = ChatService.send_message(
             db=db,
             user_id=current_user['user_id'],
-            message=request.message
+            message=request.message,
+            is_kcontent_mode=True
         )
         
         return result
@@ -216,7 +216,7 @@ async def send_kcontent_message_streaming(
     db: Session = Depends(get_db)
 ):
     """
-    🌊🎬 K-Drama/K-Content 메시지 전송 - Streaming 방식 (NEW!)
+    🌊🎬 K-Drama/K-Content 메시지 전송 - Streaming 방식
     K-Drama 촬영지 정보 서비스 (K-Contents Only)
     
     응답 형식 (Server-Sent Events):
@@ -228,11 +228,11 @@ async def send_kcontent_message_streaming(
     data: {"type": "done", "full_response": "...", "result": {...}}
     """
     try:
-        # 🎯 K-Contents 서비스 레이어로 완전히 위임
-        stream_generator = ChatKContentsService.send_message_streaming(
+        stream_generator = ChatService.send_message_streaming(
             db=db,
             user_id=current_user['user_id'],
-            message=request.message
+            message=request.message,
+            is_kcontent_mode=True
         )
         
         return StreamingResponse(
@@ -262,7 +262,6 @@ async def get_conversation_history(
     모든 서비스의 대화 히스토리를 한 번에 가져옴
     """
     try:
-        # 기존 서비스 사용 (모든 서비스가 같은 Conversation 테이블 사용)
         history = ChatService.get_conversation_history(
             db=db,
             user_id=current_user['user_id'],

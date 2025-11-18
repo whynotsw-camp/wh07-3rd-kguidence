@@ -145,7 +145,7 @@ def fetch_original_data(db: Session, place_type: int, reference_id: int):
 PLACE_TYPE_COLLECTION_MAP = {
     PlaceType.RESTAURANT: "seoul-restaurant",
     PlaceType.FESTIVAL: "seoul-festival",
-    PlaceType.KCONTENT: "seoul-kcontents",
+    PlaceType.KCONTENT: "seoul-kcontent",
 }
 
 

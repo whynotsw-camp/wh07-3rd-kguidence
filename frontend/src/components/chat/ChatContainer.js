@@ -29,7 +29,7 @@ function ChatContainer({ onDestinationsUpdate }) {
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
-    // 2. 봇 메시지 초기화 (빈 상태) - 🍽️ restaurants 추가!
+    // 2. 봇 메시지 초기화 (빈 상태) - 🍽️ restaurants, 🎬 kcontents 추가!
     const botMessageId = Date.now();
     const initialBotMessage = {
       id: botMessageId,
@@ -41,7 +41,9 @@ function ChatContainer({ onDestinationsUpdate }) {
       results: null,
       festivals: null,
       attractions: null,
-      restaurants: null // 🍽️ 레스토랑 추가
+      restaurants: null, // 🍽️ 레스토랑 추가
+      kcontents: null, // 🎬 K-Content 추가
+      locationCards: null // 🆕 다중 위치 카드
     };
     setMessages((prev) => [...prev, initialBotMessage]);
 
@@ -92,23 +94,44 @@ function ChatContainer({ onDestinationsUpdate }) {
           ));
         },
 
-        // ✅ 완료! - 🍽️ restaurants 추가!
+        // ✅ 완료! - 🍽️ restaurants, 🎬 kcontents 추가!
         onComplete: (data) => {
-          setMessages(prev => prev.map(msg => 
-            msg.id === botMessageId 
-              ? { 
-                  ...msg,
-                  text: data.full_response,
-                  isStreaming: false,
-                  results: data.results || (data.result ? [data.result] : null),
-                  festivals: data.festivals,
-                  attractions: data.attractions,
-                  restaurants: data.restaurants, // 🍽️ 레스토랑 추가
-                  hasRestaurants: data.has_restaurants, // 🍽️ 레스토랑 존재 여부
-                  conversId: data.convers_id
-                }
-              : msg
-          ));
+          // 🆕 다중 위치 검색 처리
+          if (data.type === 'multiple_locations') {
+            setMessages(prev => prev.map(msg => 
+              msg.id === botMessageId 
+                ? { 
+                    ...msg,
+                    text: data.full_response,
+                    isStreaming: false,
+                    locationCards: data.location_cards, // 🎨 카드 데이터
+                    totalCount: data.total_count,
+                    dramaName: data.drama_name,
+                    hasKcontents: data.has_kcontents,
+                    conversId: data.convers_id
+                  }
+                : msg
+            ));
+          } else {
+            // 기존 단일 결과 처리
+            setMessages(prev => prev.map(msg => 
+              msg.id === botMessageId 
+                ? { 
+                    ...msg,
+                    text: data.full_response,
+                    isStreaming: false,
+                    results: data.results || (data.result ? [data.result] : null),
+                    festivals: data.festivals,
+                    attractions: data.attractions,
+                    restaurants: data.restaurants, // 🍽️ 레스토랑 추가
+                    kcontents: data.kcontents, // 🎬 K-Content 추가
+                    hasRestaurants: data.has_restaurants, // 🍽️ 레스토랑 존재 여부
+                    hasKcontents: data.has_kcontents, // 🎬 K-Content 존재 여부
+                    conversId: data.convers_id
+                  }
+                : msg
+            ));
+          }
           setLoading(false);
 
           // 여행지가 추출되었으면 부모에게 알림
@@ -150,7 +173,7 @@ function ChatContainer({ onDestinationsUpdate }) {
     }
   };
 
-  // 일반 메시지 전송 (기존 방식 - 백업용) - 🍽️ restaurants 추가!
+  // 일반 메시지 전송 (기존 방식 - 백업용) - 🍽️ restaurants, 🎬 kcontents 추가!
   const handleSendMessage = async (messageText) => {
     // 사용자 메시지 추가
     const userMessage = {
@@ -165,7 +188,7 @@ function ChatContainer({ onDestinationsUpdate }) {
       // API 호출
       const response = await chatService.sendMessage(messageText);
 
-      // GPT 응답 추가 - 🍽️ restaurants 추가!
+      // GPT 응답 추가 - 🍽️ restaurants, 🎬 kcontents 추가!
       const gptMessage = {
         text: response.response,
         isUser: false,
@@ -174,7 +197,10 @@ function ChatContainer({ onDestinationsUpdate }) {
         festivals: response.festivals,
         attractions: response.attractions,
         restaurants: response.restaurants, // 🍽️ 레스토랑 추가
-        hasRestaurants: response.has_restaurants // 🍽️ 레스토랑 존재 여부
+        kcontents: response.kcontents, // 🎬 K-Content 추가
+        hasRestaurants: response.has_restaurants, // 🍽️ 레스토랑 존재 여부
+        hasKcontents: response.has_kcontents, // 🎬 K-Content 존재 여부
+        locationCards: response.location_cards // 🆕 다중 위치 카드 (백업용)
       };
       setMessages((prev) => [...prev, gptMessage]);
 
