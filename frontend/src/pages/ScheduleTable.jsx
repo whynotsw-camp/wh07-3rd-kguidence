@@ -3,6 +3,9 @@ import { Trash2 } from 'lucide-react';
 import '../styles/ScheduleTable.css';
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const globalFetchWithAuth = async (url, options = {}, token, setToken, setAuthError) => {
     setAuthError(null);
     if (!token) {
@@ -71,7 +74,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
         try {
             const response = await fetchWithAuth(
-                `http://localhost:8000/api/destinations/schedule-table-data?day_title=${encodeURIComponent(selectedDayTitle)}`
+                `${API_URL}/api/destinations/schedule-table-data?day_title=${encodeURIComponent(selectedDayTitle)}`
             );
             const data = await response.json();
             
@@ -123,7 +126,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
 
     useEffect(() => {
         if (!token) return;
-        fetchWithAuth('http://localhost:8000/api/schedules/day_titles')
+        fetchWithAuth(`${API_URL}/api/schedules/day_titles`)
             .then(res => res.json())
             .then(data => {
                 setDayTitles(data.map(d => d.day_title));
@@ -138,7 +141,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     useEffect(() => {
         if (!scheduleId || !token) return;
 
-        fetchWithAuth(`http://localhost:8000/api/schedules/${scheduleId}`)
+        fetchWithAuth(`${API_URL}/api/schedules/${scheduleId}`)
             .then(res => res.json())
             .then(data => {
                 const dayTitle = data.day_title || '';
@@ -152,7 +155,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
     useEffect(() => {
         if (!selectedDayTitle || !token) return;
         fetchWithAuth(
-            `http://localhost:8000/api/schedules/description?day_title=${encodeURIComponent(selectedDayTitle)}`
+            `${API_URL}/api/schedules/description?day_title=${encodeURIComponent(selectedDayTitle)}`
         )
             .then(res => res.json())
             .then(data => {
@@ -166,7 +169,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
         if (!selectedDayTitle || !token) return;
 
         fetchWithAuth(
-            `http://localhost:8000/api/schedules/update_description?day_title=${encodeURIComponent(selectedDayTitle)}&description=${encodeURIComponent(description)}`,
+            `${API_URL}:8000/api/schedules/update_description?day_title=${encodeURIComponent(selectedDayTitle)}&description=${encodeURIComponent(description)}`,
             { method: "PUT" }
         )
             .then(res => res.json())
@@ -181,7 +184,7 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             });
     };
 
-    // 🆕 테이블 전체 저장 (컬럼 순서 + 행 데이터)
+    // 🆕 테이블 전체 저장 (컬럼 순서 + 행 데이터) - 위경도 제외
     const handleSaveTableData = async () => {
         if (!selectedDayTitle || !token) {
             alert('Select schedule.');
@@ -191,29 +194,33 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
         setIsSavingTable(true);
 
         try {
-            // 행 데이터 구성
+            // 행 데이터 구성 (위경도는 보내지 않음)
             const rows = scheduleRows.map((row, index) => {
                 const rowData = {
                     destination_id: row.destination_id,
                     visit_order: index + 1
                 };
 
-                // 모든 컬럼의 값 추가
+                // 모든 컬럼의 값 추가 (latitude, longitude는 제외)
                 scheduleDays.forEach(columnName => {
+                    // 위경도 컬럼은 건너뛰기
+                    if (columnName === 'latitude' || columnName === 'longitude') {
+                        return;
+                    }
                     rowData[columnName] = getCellValue(row.id, columnName) || '';
                 });
 
                 return rowData;
             }).filter(row => row.Location && row.Location.trim()); // Location 있는 행만
 
-            console.log('📤 저장할 데이터:', {
+            console.log('📤 저장할 데이터 (위경도 제외):', {
                 day_title: selectedDayTitle,
                 column_order: scheduleDays,
                 rows: rows
             });
 
             const response = await fetchWithAuth(
-                'http://localhost:8000/api/destinations/update-schedule-data',
+                `${API_URL}/api/destinations/update-schedule-data`,
                 {
                     method: 'PUT',
                     body: JSON.stringify({
@@ -326,6 +333,67 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
         link.click();
     };
 
+    const handleDownloadAllCSV = async () => {
+        if (!token || dayTitles.length === 0) {
+            alert('다운로드할 스케줄이 없습니다.');
+            return;
+        }
+
+        try {
+            let allCsvContent = "";
+            
+            for (let i = 0; i < dayTitles.length; i++) {
+                const dayTitle = dayTitles[i];
+                
+                // 각 day_title의 데이터 가져오기
+                const response = await fetchWithAuth(
+                    `${API_URL}/api/destinations/schedule-table-data?day_title=${encodeURIComponent(dayTitle)}`
+                );
+                const data = await response.json();
+                
+                // Day Title 구분 헤더 추가
+                if (i > 0) allCsvContent += "\n\n";
+                allCsvContent += `"=== ${dayTitle} ==="\n`;
+                
+                // 컬럼 헤더
+                const columns = data.column_order || initialDays;
+                const header = ["No.", ...columns].join(",");
+                allCsvContent += header + "\n";
+                
+                // 행 데이터
+                if (data.rows && data.rows.length > 0) {
+                    data.rows.forEach((rowData, rowIndex) => {
+                        const rowValues = columns.map(columnName => {
+                            let value = rowData[columnName] || "";
+                            if (value.includes(',') || value.includes('"')) {
+                                value = `"${value.replace(/"/g, '""')}"`;
+                            }
+                            if (!value.startsWith('"') && value.trim().length > 0) {
+                                value = `"${value}"`;
+                            }
+                            return value;
+                        });
+                        allCsvContent += [rowIndex + 1, ...rowValues].join(",") + "\n";
+                    });
+                }
+            }
+
+            // CSV 다운로드
+            const BOM = "\uFEFF";
+            const blob = new Blob([BOM + allCsvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'All_Schedules.csv');
+            link.click();
+            
+            alert(`✅ 전체 ${dayTitles.length}개 일정이 다운로드되었습니다!`);
+        } catch (error) {
+            console.error('❌ 전체 CSV 다운로드 실패:', error);
+            alert(`다운로드 실패: ${error.message}`);
+        }
+    };
+
     const onDragEnd = (result) => {
         const { source, destination, type } = result;
         if (!destination || isDeletionModeActive) return;
@@ -343,17 +411,17 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
             <header className="kschedule-header">
                 <h1>🗓️ Schedule Management and Editor</h1>
 
-                                        <button 
-                            onClick={handleSaveTableData} 
-                            className="kschedule-btn-success_ok"
-                            disabled={isSavingTable}
-                            style={{ 
-                                background: isSavingTable ? '#6c757d' : '#28a745',
-                                cursor: isSavingTable ? 'not-allowed' : 'pointer'
-                            }}
-                        >
-                            💾 {isSavingTable ? 'Saving...' : 'Save Table'}
-                        </button>
+                <button 
+                    onClick={handleSaveTableData} 
+                    className="kschedule-btn-success_ok"
+                    disabled={isSavingTable}
+                    style={{ 
+                        background: isSavingTable ? '#6c757d' : '#28a745',
+                        cursor: isSavingTable ? 'not-allowed' : 'pointer'
+                    }}
+                >
+                    💾 {isSavingTable ? 'Saving...' : 'Save Table'}
+                </button>
 
                 {isLoadingTable && (
                     <p style={{color: '#007bff'}}>
@@ -423,7 +491,11 @@ const ScheduleTable = ({ scheduleId, onDayTitleChange }) => {
                         </button>
 
                         <button onClick={handleDownloadCSV} className="kschedule-btn-info">
-                            📥 CSV Download
+                            📥 CSV Download (Current)
+                        </button>
+
+                        <button onClick={handleDownloadAllCSV} className="kschedule-btn-info">
+                            📥 CSV Download (All Days)
                         </button>
                     </div>
 

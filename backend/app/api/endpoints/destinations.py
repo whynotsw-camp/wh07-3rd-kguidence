@@ -87,6 +87,7 @@ async def get_schedule_table_data(
         )
 
 # 💾 테이블 데이터 저장 (컬럼 순서 + 행 데이터)
+# 💾 테이블 데이터 저장 (컬럼 순서 + 행 데이터) - 위경도 보존 버전
 @router.put("/update-schedule-data")
 async def update_schedule_data(
     request: UpdateScheduleTableRequest,
@@ -96,7 +97,8 @@ async def update_schedule_data(
     """
     일정 테이블의 전체 데이터를 저장합니다.
     - 컬럼 순서 저장
-    - 기존 데이터 삭제 후 새로 생성 (화면에 보이는 것만)
+    - 기존 destination의 latitude/longitude 보존
+    - UPDATE 방식으로 변경 (삭제 후 재생성 X)
     """
     try:
         # 1. schedule 찾기
@@ -123,15 +125,21 @@ async def update_schedule_data(
         else:
             metadata.column_order = request.column_order
         
-        # ✨✨✨ 3. 기존 destination 데이터 모두 삭제 (핵심!) ✨✨✨
-        deleted_count = db.query(Destination).filter(
+        # 3. 기존 destination 조회 (위경도 보존 위해)
+        existing_destinations = db.query(Destination).filter(
             Destination.schedule_id == schedule.schedule_id,
             Destination.user_id == current_user['user_id']
-        ).delete(synchronize_session=False)
+        ).all()
         
-        # 4. 새로운 행 데이터 생성
+        # destination_id로 매핑
+        existing_map = {dest.destination_id: dest for dest in existing_destinations}
+        
+        # 4. 처리된 destination_id 추적
+        processed_ids = set()
+        updated_count = 0
         created_count = 0
         
+        # 5. 행 데이터 처리 (UPDATE 또는 CREATE)
         for row_data in request.rows:
             location = row_data.get('Location', '').strip()
             
@@ -139,32 +147,57 @@ async def update_schedule_data(
             if not location:
                 continue
             
-            # custom_fields 추출 (Location, Notice, destination_id, visit_order 제외)
+            # custom_fields 추출
             custom_fields = {}
             for key, value in row_data.items():
-                if key not in ['destination_id', 'visit_order', 'Location', 'Notice']:
+                if key not in ['destination_id', 'visit_order', 'Location', 'Notice', 'latitude', 'longitude']:
                     custom_fields[key] = value
             
-            # 항상 새 destination 생성 (destination_id는 무시)
-            new_destination = Destination(
-                user_id=current_user['user_id'],
-                schedule_id=schedule.schedule_id,
-                name=location,
-                notes=row_data.get('Notice', ''),
-                visit_order=row_data.get('visit_order', 0),
-                place_type=0,
-                custom_fields=custom_fields if custom_fields else None
-            )
-            db.add(new_destination)
-            created_count += 1
+            destination_id = row_data.get('destination_id')
+            
+            # 기존 destination 업데이트
+            if destination_id and destination_id in existing_map:
+                existing_dest = existing_map[destination_id]
+                
+                # 🌟 위경도는 건드리지 않음! (latitude, longitude 업데이트 안 함)
+                existing_dest.name = location
+                existing_dest.notes = row_data.get('Notice', '')
+                existing_dest.visit_order = row_data.get('visit_order', 0)
+                existing_dest.custom_fields = custom_fields if custom_fields else None
+                
+                processed_ids.add(destination_id)
+                updated_count += 1
+            
+            # 새 destination 생성
+            else:
+                new_destination = Destination(
+                    user_id=current_user['user_id'],
+                    schedule_id=schedule.schedule_id,
+                    name=location,
+                    notes=row_data.get('Notice', ''),
+                    visit_order=row_data.get('visit_order', 0),
+                    place_type=0,
+                    custom_fields=custom_fields if custom_fields else None
+                    # latitude, longitude는 None으로 유지 (나중에 지도에서 설정)
+                )
+                db.add(new_destination)
+                created_count += 1
+        
+        # 6. 화면에서 삭제된 행 처리
+        deleted_count = 0
+        for dest_id, dest in existing_map.items():
+            if dest_id not in processed_ids:
+                db.delete(dest)
+                deleted_count += 1
         
         db.commit()
         
         return {
             "success": True,
-            "message": f"저장 완료 - 삭제: {deleted_count}개, 생성: {created_count}개",
-            "deleted": deleted_count,
-            "created": created_count
+            "message": f"저장 완료 - 업데이트: {updated_count}개, 생성: {created_count}개, 삭제: {deleted_count}개",
+            "updated": updated_count,
+            "created": created_count,
+            "deleted": deleted_count
         }
         
     except Exception as e:

@@ -1,4 +1,4 @@
-# app/services/chat_service.py - 다중 검색 패턴 확장 버전
+# app/services/chat_service.py - 다중 검색 패턴 확장 버전 + 포맷팅 강제
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 import json
@@ -43,6 +43,35 @@ class ChatService:
     # 🚀 캐싱된 인스턴스들
     _embedding_model = None
     _qdrant_client = None
+    
+    # 🎨 포맷팅 강제 System Message - 추가!
+    FORMATTING_SYSTEM_MESSAGE = {
+        "role": "system",
+        "content": """CRITICAL FORMATTING RULES - YOU MUST FOLLOW THESE:
+
+1. NEVER write long continuous paragraphs
+2. Use double line breaks (\\n\\n) between different sections
+3. Keep each paragraph to 1-2 sentences maximum
+4. For lists, use bullet format with • symbol
+5. Add line breaks before and after bullet lists
+6. ALWAYS respond in English only - no Korean characters unless specifically requested
+7. When showing Korean phrases, use romanization (e.g., "annyeonghaseyo" not "안녕하세요")
+
+Example format:
+[Opening sentence with emoji]
+
+[Key point 1 - separate paragraph]
+
+[Key point 2 - separate paragraph]
+
+• Bullet point 1
+• Bullet point 2
+• Bullet point 3
+
+[Closing sentence]
+
+ALWAYS structure your response this way for maximum readability!"""
+    }
     
     @staticmethod
     def _get_embedding_model():
@@ -710,7 +739,7 @@ class ChatService:
     
     @staticmethod
     async def send_message_streaming(db: Session, user_id: int, message: str, is_kcontent_mode: bool = False):
-        """스트리밍 메시지 처리 (다중 검색 기능 추가)"""
+        """스트리밍 메시지 처리 (다중 검색 기능 + 포맷팅 강제)"""
         try:
             # 분석
             analysis = ChatService._analyze_message_fast(message, is_kcontent_mode)
@@ -747,11 +776,11 @@ class ChatService:
                     for location in multiple_kcontents:
                         card = {
                             "content_id": location.get('content_id'),
-                            "location_name": location.get('location_name'),      # 📍 장소명
-                            "category": location.get('category'),                # 🏷️ 카테고리  
-                            "thumbnail": location.get('thumbnail'),              # 🖼️ 썸네일
+                            "location_name": location.get('location_name'),
+                            "category": location.get('category'),
+                            "thumbnail": location.get('thumbnail'),
                             "drama_name": location.get('drama_name'),
-                            "clickable": True                                    # 클릭 가능 표시
+                            "clickable": True
                         }
                         location_cards.append(card)
                     
@@ -771,10 +800,10 @@ class ChatService:
                     
                     # 🎯 최종 응답
                     completion_data = {
-                        'type': 'multiple_locations',               # 🆕 새로운 응답 타입
+                        'type': 'multiple_locations',
                         'full_response': ai_response,
                         'convers_id': conversation.convers_id,
-                        'location_cards': location_cards,           # 🎨 카드 데이터 배열
+                        'location_cards': location_cards,
                         'total_count': len(multiple_kcontents),
                         'drama_name': multiple_kcontents[0].get('drama_name') if multiple_kcontents else '',
                         'has_kcontents': True,
@@ -789,8 +818,15 @@ class ChatService:
                     yield f"data: {json.dumps({'type': 'generating', 'message': '🤔 Comparing K-Drama locations...'}, ensure_ascii=False)}\n\n"
                     
                     prompt = KCONTENT_COMPARISON_PROMPT.format(message=message)
+                    
+                    # 포맷팅 강제!
+                    messages = [
+                        ChatService.FORMATTING_SYSTEM_MESSAGE,
+                        {"role": "user", "content": prompt}
+                    ]
+                    
                     full_response = ""
-                    for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=300, temperature=0.7):
+                    for chunk in chat_with_gpt_stream(messages, max_tokens=300, temperature=0.7):
                         full_response += chunk
                         yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                         await asyncio.sleep(0.02)
@@ -808,8 +844,15 @@ class ChatService:
                     yield f"data: {json.dumps({'type': 'generating', 'message': '💡 Preparing K-Drama tips...'}, ensure_ascii=False)}\n\n"
                     
                     prompt = KCONTENT_ADVICE_PROMPT.format(message=message)
+                    
+                    # 포맷팅 강제!
+                    messages = [
+                        ChatService.FORMATTING_SYSTEM_MESSAGE,
+                        {"role": "user", "content": prompt}
+                    ]
+                    
                     full_response = ""
-                    for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=350, temperature=0.7):
+                    for chunk in chat_with_gpt_stream(messages, max_tokens=350, temperature=0.7):
                         full_response += chunk
                         yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                         await asyncio.sleep(0.02)
@@ -865,8 +908,14 @@ class ChatService:
                         message=message
                     )
                     
+                    # 포맷팅 강제!
+                    messages = [
+                        ChatService.FORMATTING_SYSTEM_MESSAGE,
+                        {"role": "user", "content": prompt}
+                    ]
+                    
                     full_response = ""
-                    for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=250, temperature=0.6):
+                    for chunk in chat_with_gpt_stream(messages, max_tokens=250, temperature=0.6):
                         full_response += chunk
                         yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                         await asyncio.sleep(0.02)
@@ -903,29 +952,25 @@ class ChatService:
                     yield f"data: {json.dumps({'type': 'error', 'message': 'Sorry, I could not find locations for this drama. 😅'}, ensure_ascii=False)}\n\n"
                     return
                 
-                # AI 응답 생성
                 ai_response = f"🎬 Amazing! I found {len(multiple_kcontents)} filming locations from this drama! Each place has its own special story. Tap any location card below for detailed information! 💕✨"
                 
-                # 대화 저장
                 conversation = Conversation(user_id=user_id, question=message, response=ai_response)
                 db.add(conversation)
                 db.commit()
                 db.refresh(conversation)
                 
-                # 🎨 카드 형태 데이터 준비
                 location_cards = []
                 for location in multiple_kcontents:
                     card = {
                         "content_id": location.get('content_id'),
-                        "location_name": location.get('location_name'),      # 📍 장소명
-                        "category": location.get('category'),                # 🏷️ 카테고리  
-                        "thumbnail": location.get('thumbnail'),              # 🖼️ 썸네일
+                        "location_name": location.get('location_name'),
+                        "category": location.get('category'),
+                        "thumbnail": location.get('thumbnail'),
                         "drama_name": location.get('drama_name'),
-                        "clickable": True                                    # 클릭 가능 표시
+                        "clickable": True
                     }
                     location_cards.append(card)
                 
-                # 지도 마커 생성
                 map_markers = []
                 for location in multiple_kcontents:
                     if location.get('latitude') and location.get('longitude'):
@@ -939,12 +984,11 @@ class ChatService:
                         }
                         map_markers.append(marker)
                 
-                # 🎯 최종 응답
                 completion_data = {
-                    'type': 'multiple_locations',               # 🆕 새로운 응답 타입
+                    'type': 'multiple_locations',
                     'full_response': ai_response,
                     'convers_id': conversation.convers_id,
-                    'location_cards': location_cards,           # 🎨 카드 데이터 배열
+                    'location_cards': location_cards,
                     'total_count': len(multiple_kcontents),
                     'drama_name': multiple_kcontents[0].get('drama_name') if multiple_kcontents else '',
                     'has_kcontents': True,
@@ -954,15 +998,22 @@ class ChatService:
                 yield f"data: {json.dumps(completion_data, ensure_ascii=False)}\n\n"
                 return
             
-            # 🎤 일반 모드 처리 (기존 로직)
+            # 🎤 일반 모드 처리 (기존 로직 + 포맷팅 강제)
             # 레스토랑 관련 처리
             if is_restaurant_query:
                 if question_type == "comparison":
                     yield f"data: {json.dumps({'type': 'generating', 'message': '🤔 레스토랑 비교 분석 중...'}, ensure_ascii=False)}\n\n"
                     
                     prompt = RESTAURANT_COMPARISON_PROMPT.format(message=message)
+                    
+                    # 포맷팅 강제!
+                    messages = [
+                        ChatService.FORMATTING_SYSTEM_MESSAGE,
+                        {"role": "user", "content": prompt}
+                    ]
+                    
                     full_response = ""
-                    for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=300, temperature=0.7):
+                    for chunk in chat_with_gpt_stream(messages, max_tokens=300, temperature=0.7):
                         full_response += chunk
                         yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                         await asyncio.sleep(0.02)
@@ -979,8 +1030,15 @@ class ChatService:
                     yield f"data: {json.dumps({'type': 'generating', 'message': '💡 음식 문화 팁 준비 중...'}, ensure_ascii=False)}\n\n"
                     
                     prompt = RESTAURANT_ADVICE_PROMPT.format(message=message)
+                    
+                    # 포맷팅 강제!
+                    messages = [
+                        ChatService.FORMATTING_SYSTEM_MESSAGE,
+                        {"role": "user", "content": prompt}
+                    ]
+                    
                     full_response = ""
-                    for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=350, temperature=0.7):
+                    for chunk in chat_with_gpt_stream(messages, max_tokens=350, temperature=0.7):
                         full_response += chunk
                         yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                         await asyncio.sleep(0.02)
@@ -1013,8 +1071,14 @@ class ChatService:
                         message=message
                     )
                     
+                    # 포맷팅 강제!
+                    messages = [
+                        ChatService.FORMATTING_SYSTEM_MESSAGE,
+                        {"role": "user", "content": prompt}
+                    ]
+                    
                     full_response = ""
-                    for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=250, temperature=0.6):
+                    for chunk in chat_with_gpt_stream(messages, max_tokens=250, temperature=0.6):
                         full_response += chunk
                         yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                         await asyncio.sleep(0.02)
@@ -1049,8 +1113,15 @@ class ChatService:
                 yield f"data: {json.dumps({'type': 'generating', 'message': '🤔 비교 분석 중...'}, ensure_ascii=False)}\n\n"
                 
                 prompt = COMPARISON_PROMPT.format(message=message)
+                
+                # 포맷팅 강제!
+                messages = [
+                    ChatService.FORMATTING_SYSTEM_MESSAGE,
+                    {"role": "user", "content": prompt}
+                ]
+                
                 full_response = ""
-                for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=300, temperature=0.7):
+                for chunk in chat_with_gpt_stream(messages, max_tokens=300, temperature=0.7):
                     full_response += chunk
                     yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                     await asyncio.sleep(0.02)
@@ -1068,8 +1139,15 @@ class ChatService:
                 yield f"data: {json.dumps({'type': 'generating', 'message': '💡 여행 팁 준비 중...'}, ensure_ascii=False)}\n\n"
                 
                 prompt = ADVICE_PROMPT.format(message=message)
+                
+                # 포맷팅 강제!
+                messages = [
+                    ChatService.FORMATTING_SYSTEM_MESSAGE,
+                    {"role": "user", "content": prompt}
+                ]
+                
                 full_response = ""
-                for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=350, temperature=0.7):
+                for chunk in chat_with_gpt_stream(messages, max_tokens=350, temperature=0.7):
                     full_response += chunk
                     yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                     await asyncio.sleep(0.02)
@@ -1102,16 +1180,16 @@ class ChatService:
             else:
                 yield f"data: {json.dumps({'type': 'searching', 'message': '🔍 정보를 찾고 있어요...'}, ensure_ascii=False)}\n\n"
                 
-                with ThreadPoolExecutor(max_workers=4) as executor:  # ✅ 3 → 4
+                with ThreadPoolExecutor(max_workers=4) as executor:
                     festival_future = executor.submit(ChatService._search_best_festival, keyword)
                     attraction_future = executor.submit(ChatService._search_best_attraction, keyword)
                     restaurant_future = executor.submit(ChatService._search_best_restaurant, keyword)
-                    kcontent_future = executor.submit(ChatService._search_best_kcontent, keyword)  # ✅ 추가
+                    kcontent_future = executor.submit(ChatService._search_best_kcontent, keyword)
                     
                     festival = festival_future.result()
                     attraction = attraction_future.result()
                     restaurant = restaurant_future.result()
-                    kcontent = kcontent_future.result()  # ✅ 추가
+                    kcontent = kcontent_future.result()
                 
                 results = []
                 if festival:
@@ -1123,7 +1201,7 @@ class ChatService:
                 if restaurant:
                     restaurant['type'] = 'restaurant'
                     results.append(restaurant)
-                if kcontent:  # ✅ 추가
+                if kcontent:
                     kcontent['type'] = 'kcontent'
                     results.append(kcontent)
                 
@@ -1134,7 +1212,7 @@ class ChatService:
                 results.sort(key=lambda x: x['similarity_score'], reverse=True)
                 result = results[0]
                 
-                # 🎯 제목 생성 (f-string 중첩 방지)
+                # 제목 생성
                 if result.get('restaurant_name'):
                     title = result.get('restaurant_name')
                 elif result.get('title'):
@@ -1163,7 +1241,7 @@ class ChatService:
                         description=result.get('description', ''),
                         message=message
                     )
-                elif result_type == 'kcontent':  # ✅ 추가
+                elif result_type == 'kcontent':
                     prompt = KCONTENT_QUICK_PROMPT.format(
                         drama_name=result.get('drama_name', ''),
                         location_name=result.get('location_name', ''),
@@ -1181,8 +1259,14 @@ class ChatService:
                         message=message
                     )
                 
+                # 포맷팅 강제!
+                messages = [
+                    ChatService.FORMATTING_SYSTEM_MESSAGE,
+                    {"role": "user", "content": prompt}
+                ]
+                
                 full_response = ""
-                for chunk in chat_with_gpt_stream([{"role": "user", "content": prompt}], max_tokens=250, temperature=0.6):
+                for chunk in chat_with_gpt_stream(messages, max_tokens=250, temperature=0.6):
                     full_response += chunk
                     yield f"data: {json.dumps({'type': 'chunk', 'content': chunk}, ensure_ascii=False)}\n\n"
                     await asyncio.sleep(0.02)
@@ -1203,11 +1287,11 @@ class ChatService:
                     'festivals': [result] if result_type == 'festival' else [],
                     'attractions': [result] if result_type == 'attraction' else [],
                     'restaurants': [result] if result_type == 'restaurant' else [],
-                    'kcontents': [result] if result_type == 'kcontent' else [],  # ✅ 추가
+                    'kcontents': [result] if result_type == 'kcontent' else [],
                     'has_festivals': result_type == 'festival',
                     'has_attractions': result_type == 'attraction',
                     'has_restaurants': result_type == 'restaurant',
-                    'has_kcontents': result_type == 'kcontent',  # ✅ 추가
+                    'has_kcontents': result_type == 'kcontent',
                     'map_markers': map_markers
                 }
                 
@@ -1261,5 +1345,3 @@ class ChatService:
             }
             for conv in reversed(conversations)
         ]
-        
-        

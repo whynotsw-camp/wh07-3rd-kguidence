@@ -6,7 +6,7 @@ function ChatMessage({ message }) {
     return (
         <div className={`chat-message ${message.isUser ? 'user' : 'bot'} ${message.isError ? 'error' : ''} ${message.isStreaming ? 'streaming' : ''}`}>
             {/* 텍스트 메시지 */}
-            <div className="message-text">
+            <div className="message-text" style={{ whiteSpace: 'pre-wrap' }}>
                 {message.text}
                 
                 {/* 🌊 Streaming 중일 때 타이핑 커서 표시 */}
