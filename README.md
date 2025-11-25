@@ -43,4 +43,7 @@ K-Guidence는 서울 여행을 위한 AI 기반 여행 도우미 애플리케이
   </tr>
 </table>
 
-## 시작하기
+## 시스템 구성도
+ <div align="center">
+  <img src="./docs/system.png" alt="시스템 구성도" width="100%"/>
+</div>
