@@ -1,7 +1,11 @@
 # K-Guidence
 
 <div align="center">
-  <img src="./docs/logo.png" alt="K-Guidence Logo" width="300"/>
+  <img src="./docs/logo.png" alt="K-Guidence Logo" width="200"/>
+</div>
+
+<div align="center">
+  <img src="./docs/robot.png" alt="K-Guidence Logo" width="300"/>
 </div>
 
 <hr>
