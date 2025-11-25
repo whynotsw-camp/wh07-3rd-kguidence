@@ -24,4 +24,23 @@ K-Guidence는 서울 여행을 위한 AI 기반 여행 도우미 애플리케이
 
 ## 팀원 소개
 
+<table>
+  <tr>
+    <td align="center"><b>김다은</b></td>
+    <td align="center"><b>백승범</b></td>
+    <td align="center"><b>한지훈</b></td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./docs/da.png" alt="김다은" width="150"/>
+    </td>
+    <td align="center">
+      <img src="./docs/se.png" alt="백승범" width="150"/>
+    </td>
+    <td align="center">
+      <img src="./docs/gi.png" alt="한지훈" width="150"/>
+    </td>
+  </tr>
+</table>
+
 ## 시작하기
